@@ -1,0 +1,17 @@
+# This file keeps track of the available plugin components for the pipeline
+
+[plugins]
+
+# each entry should have a name for the plugin component, and the name of the directory in which it is held
+star = star_aligner
+deseq = deseq 
+
+
+
+[aligners]
+
+# a comma-separated list of the aligners that have been implemented for the pipeline
+available_aligners = star,
+
+# the default aligner
+default_aligner = star
