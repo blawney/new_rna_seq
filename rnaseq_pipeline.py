@@ -6,6 +6,7 @@ import os
 import sys
 
 from utils.pipeline import Pipeline
+from utils.project import Project
 
 
 def create_logger(log_dir):
@@ -34,7 +35,13 @@ if __name__ == "__main__":
 		create_logger(output_dir)
 
 		# create the pipeline object:
-		pipeline = Pipeline(pipeline_home, cl_args)
+		pipeline = Pipeline(pipeline_home)
+		pipeline.setup()
+
+		project = Project(cl_args)
+		
+		pipeline.add_project(project)
+		pipeline.prepare_project()
 
 	except Exception as ex:
 		logging.error("Exception thrown.  Message: %s", ex.message)

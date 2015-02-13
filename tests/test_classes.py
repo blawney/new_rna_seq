@@ -17,6 +17,7 @@ from utils.util_classes import Params
 from utils.pipeline import Pipeline
 from utils.custom_exceptions import *
 import utils.config_parser
+from utils.util_methods import *
 
 
 def dummy_join(a,b):
@@ -75,17 +76,27 @@ class TestParams(unittest.TestCase):
 		# add some value. Not necessary to do this.
 		v = "some_value"
 		p.add( key = v)
-
 		self.assertRaises(ParameterNotFoundException, p.get, "missing_val")
 
+	def test_reset_param(self):
+		p = Params()
+		v = "some_value"
+		p.add( key = v)
+		p.reset_param('key', 'new_value')
+		self.assertEqual(p.get('key'), 'new_value')
 
 
-class TestPipeline(unittest.TestCase):
+	def test_trying_to_reset_unset_param_raises_exception(self):
+		with self.assertRaises(ParameterNotFoundException):
+			p = Params()
+			p.reset_param('key', 'new_value')
+
+
+class TestProject(unittest.TestCase):
 	"""
-	Tests the Pipeline object
+	Tests the Project object
 	"""
-	
-	@mock.patch('utils.pipeline.os')
+	@mock.patch('utils.util_methods.os')
 	def test_missing_default_config_file_with_no_alternative_given(self, mock_os):
 		"""
 		No config file passed via commandline and none found in the project directory
@@ -99,9 +110,16 @@ class TestPipeline(unittest.TestCase):
 
 		with self.assertRaises(ConfigFileNotFoundException):
 			p = Pipeline("path", dummy_dict)
+			p.setup()
+
+class TestPipeline(unittest.TestCase):
+	"""
+	Tests the Pipeline object
+	"""
 
 
-	@mock.patch('utils.pipeline.os')
+
+	@mock.patch('utils.util_methods.os')
 	def test_missing_alternative_config_file(self, mock_os):
 		"""
 		Config filepath passed via commandline, but is not found.
@@ -120,10 +138,11 @@ class TestPipeline(unittest.TestCase):
 			mo.side_effect = IOError
 			with self.assertRaises(ConfigFileNotFoundException):
 				p = Pipeline("path", dummy_dict)
+				p.setup()
 
 
-	@mock.patch('utils.pipeline.os.path.join', side_effect=dummy_join)
-	@mock.patch('utils.pipeline.os')
+	@mock.patch('utils.util_methods.os.path.join', side_effect=dummy_join)
+	@mock.patch('utils.util_methods.os')
 	def test_multiple_config_file_with_no_alternative_given(self, mock_os, mock_join):
 		"""
 		No config file passed via commandline and multiple found in the project directory
@@ -137,12 +156,13 @@ class TestPipeline(unittest.TestCase):
 
 		with self.assertRaises(MultipleConfigFileFoundException):
 			p = Pipeline("path/to/home", dummy_dict)
+			p.setup()
 
-
-	@mock.patch('utils.pipeline.os.path.join', side_effect=dummy_join)
+	@mock.patch('utils.pipeline.Pipeline.__verify_addons__') # mock this out so that that method does not throw an exception.
+	@mock.patch('utils.util_methods.os.path.join', side_effect=dummy_join)
 	@mock.patch('utils.config_parser.read')
-	@mock.patch('utils.pipeline.os')
-	def test_parses_default_config_file_with_no_alternative_given(self, mock_pipeline_os, mock_cfg_reader, mock_join):
+	@mock.patch('utils.util_methods.os')
+	def test_parses_default_config_file_with_no_alternative_given(self, mock_pipeline_os, mock_cfg_reader, mock_join, mock_m):
 		"""
 		Assumptions-- os.listdir() finds a single .cfg file in the pipeline home directory.
 		No config file passed via commandline.
@@ -166,7 +186,7 @@ class TestPipeline(unittest.TestCase):
 
 		with mock.patch.object(__builtin__, 'open', mock.mock_open()) as mo:
 			p = Pipeline(dummy_path, dummy_dict)
-
+			p.setup()
 		# the expected parameters
 		expected_param_dict = {'pipeline_home':dummy_path, 'configuration_file': os.path.join(dummy_path, default_cfg_name)}
 		expected_param_dict.update(mock_cfg_dict)
@@ -174,10 +194,11 @@ class TestPipeline(unittest.TestCase):
 		self.assertEqual(p.params.get_param_dict(), expected_param_dict)
 
 
-	@mock.patch('utils.pipeline.os.path.join', side_effect=dummy_join)
+	@mock.patch('utils.pipeline.Pipeline.__verify_addons__') # mock this out so that that method does not throw an exception.
+	@mock.patch('utils.util_methods.os.path.join', side_effect=dummy_join)
 	@mock.patch('utils.config_parser.read')
-	@mock.patch('utils.pipeline.os')
-	def test_parses_alternative_config_file(self, mock_pipeline_os, mock_cfg_reader, mock_join):
+	@mock.patch('utils.util_methods.os')
+	def test_parses_alternative_config_file(self, mock_pipeline_os, mock_cfg_reader, mock_join, mock_m):
 		"""
 		Assumptions-- os.listdir() finds a single .cfg file in the pipeline home directory.
 		A custom config file passed via commandline.
@@ -199,12 +220,45 @@ class TestPipeline(unittest.TestCase):
 
 		with mock.patch.object(__builtin__, 'open', mock.mock_open()) as mo:
 			p = Pipeline(dummy_path, dummy_dict)			
-
+			p.setup()
 		# the expected parameters
 		expected_param_dict = {'pipeline_home':dummy_path, 'configuration_file': custom_cfg_filepath}
 		expected_param_dict.update(mock_cfg_dict)
 
 		self.assertEqual(p.params.get_param_dict(), expected_param_dict)
+
+
+	@mock.patch('utils.util_methods.os.path.join', side_effect=dummy_join)
+	@mock.patch('utils.config_parser.read')
+	@mock.patch('utils.util_methods.os')
+	def test_raises_exception_if_missing_pipeline_components(self, mock_os, mock_cfg_reader, mock_join):
+		"""
+		This covers where the genome or component directories could be missing (or the path to them is just wrong)
+		"""
+		
+		default_cfg_name = 'default.cfg'
+
+		# mock the default config file being found in the home dir: 
+		mock_os.listdir.return_value = [default_cfg_name]
+		mock_os.path.isfile.return_value = True
+
+		# mock there being no command line arg passed for a different config file, and receiving component+genome dirs
+		dummy_dict = {'configuration_file': None}
+
+		# mock the return from the reader
+		mock_cfg_dict = {'components_dir':'components', 'genomes_dir':'genome_info'}
+		mock_cfg_reader.return_value = mock_cfg_dict
+
+		# create a Pipeline object, which will be populated with the mock return dictionary
+		dummy_path = "path/to/home"
+
+		with mock.patch.object(__builtin__, 'open', mock.mock_open()) as mo:
+			p = Pipeline(dummy_path, dummy_dict)
+			# this mocks the directory not being found
+			mock_os.path.isdir.return_value = False # this mocks the directory not being found
+			with self.assertRaises(MissingComponentDirectoryException):
+				p.setup()
+
 
 
 class TestConfigParser(unittest.TestCase):

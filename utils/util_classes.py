@@ -25,6 +25,14 @@ class Params(object):
 			logging.error("Could not locate parameter: '%s' in parameter dictionary.  ", name)
 			raise ParameterNotFoundException("Tried to retrieve a parameter that was not set.  See log.")
 
+	def reset_param(self, name, new_value):
+
+		if name in self.__param_dict__:
+			self.__param_dict__[name] = new_value
+		else:
+			logging.error("Could not locate parameter: '%s' in parameter dictionary.  ", name)
+			raise ParameterNotFoundException("Tried to reset a parameter that was not already set.  See log.")
+
 
 	def add(self, *args, **kwargs):
 		"""

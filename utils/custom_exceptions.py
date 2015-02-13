@@ -10,3 +10,6 @@ class CannotMakeOutputDirectoryException(Exception):
 
 class ParameterNotFoundException(Exception):
 	pass
+
+class MissingComponentDirectoryException(Exception):
+	pass

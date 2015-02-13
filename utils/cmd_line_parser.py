@@ -40,8 +40,8 @@ def setup_args():
 	parser.add_argument("-config",
 				required=False,
 				default=None,
-				help="Full path to a custom configuration file.",
-				dest="configuration_file")
+				help="Full path to a custom project configuration file.",
+				dest="project_configuration_file")
 
 	parser.add_argument("-skip_align",
 				action="store_true",
