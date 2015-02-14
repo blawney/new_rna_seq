@@ -15,6 +15,7 @@ sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
 
 from utils.util_classes import Params
 from utils.pipeline import Pipeline
+from utils.project import Project
 from utils.custom_exceptions import *
 import utils.config_parser
 from utils.util_methods import *
@@ -22,6 +23,7 @@ from utils.util_methods import *
 
 def dummy_join(a,b):
 	return os.path.join(a,b)
+
 
 class TestParams(unittest.TestCase):
 	"""
@@ -99,24 +101,21 @@ class TestProject(unittest.TestCase):
 	@mock.patch('utils.util_methods.os')
 	def test_missing_default_config_file_with_no_alternative_given(self, mock_os):
 		"""
-		No config file passed via commandline and none found in the project directory
+		No config file passed via commandline and none found in the project_configuration directory
 		"""
 		
 		# mock the missing config file: 
 		mock_os.listdir.return_value = []
 
 		# mock there being no command line arg passed for a different config file:
-		dummy_dict = {'configuration_file': None}
+		mock_cl_args = {'project_configuration_file': None}
+		
+		# mock the pipeline params
+		mock_pipeline_params = {'project_configurations_dir': '/path/to/proj_config_dir'}
 
 		with self.assertRaises(ConfigFileNotFoundException):
-			p = Pipeline("path", dummy_dict)
-			p.setup()
-
-class TestPipeline(unittest.TestCase):
-	"""
-	Tests the Pipeline object
-	"""
-
+			p = Project(mock_cl_args)
+			p.prepare(mock_pipeline_params)
 
 
 	@mock.patch('utils.util_methods.os')
@@ -129,40 +128,85 @@ class TestPipeline(unittest.TestCase):
 		mock_os.listdir.return_value = []
 
 		# mock there being a command line arg passed for a different config file:
-		dummy_dict = {'configuration_file': 'alternate.cfg'}
+		mock_cl_args = {'project_configuration_file': 'alternate.cfg'}
+
+		# mock the pipeline params
+		mock_pipeline_params = {'project_configurations_dir': '/path/to/proj_config_dir'}
 
 		# here we mock the open() builtin method.  Without this, one could conceivably have
-		# the above file in their filesystem, which would cause the test to fail (since said file
+		# the above (intended fake) file in their filesystem, which would cause the test to fail (since said file
 		# is, in fact, present).  If the file is not present, open() raises IOError.
 		with mock.patch.object(__builtin__, 'open', mock.mock_open()) as mo:
 			mo.side_effect = IOError
 			with self.assertRaises(ConfigFileNotFoundException):
-				p = Pipeline("path", dummy_dict)
-				p.setup()
+				p = Project(mock_cl_args)
+				p.prepare(mock_pipeline_params)
 
 
 	@mock.patch('utils.util_methods.os.path.join', side_effect=dummy_join)
 	@mock.patch('utils.util_methods.os')
 	def test_multiple_config_file_with_no_alternative_given(self, mock_os, mock_join):
 		"""
-		No config file passed via commandline and multiple found in the project directory
+		No config file passed via commandline and multiple found in the project_configurations directory
 		"""
 		
 		# mock the multiple config files: 
 		mock_os.listdir.return_value = ['a.cfg','b.cfg']
 
 		# mock there being no command line arg passed for a different config file:
-		dummy_dict = {'configuration_file': None}
+		mock_cl_args = {'project_configuration_file': None}
+
+		# mock the pipeline params
+		mock_pipeline_params = {'project_configurations_dir': '/path/to/proj_config_dir'}
 
 		with self.assertRaises(MultipleConfigFileFoundException):
-			p = Pipeline("path/to/home", dummy_dict)
-			p.setup()
+			p = Project(mock_cl_args)
+			p.prepare(mock_pipeline_params)
 
-	@mock.patch('utils.pipeline.Pipeline.__verify_addons__') # mock this out so that that method does not throw an exception.
+
 	@mock.patch('utils.util_methods.os.path.join', side_effect=dummy_join)
 	@mock.patch('utils.config_parser.read')
 	@mock.patch('utils.util_methods.os')
-	def test_parses_default_config_file_with_no_alternative_given(self, mock_pipeline_os, mock_cfg_reader, mock_join, mock_m):
+	def test_parses_alternative_config_file(self, mock_os, mock_cfg_reader, mock_join):
+		"""
+		Assumptions-- os.listdir() finds a single .cfg file in the pipeline home directory.
+		A custom config file passed via commandline.
+		"""
+		
+		# mock the missing config file: 
+		mock_os.listdir.return_value = ['default.cfg']
+
+		# mock there being no command line arg passed for a different config file:
+		custom_cfg_filepath = '/path/to/custom.cfg'
+		mock_cl_args = {'project_configuration_file': custom_cfg_filepath}
+
+		# mock the pipeline params
+		mock_pipeline_params = {'project_configurations_dir': '/path/to/proj_cfg_dir'}
+
+		# mock the return from the reader
+		mock_cfg_dict = {'a':1, 'b':2}
+		mock_cfg_reader.return_value = mock_cfg_dict
+
+		with mock.patch.object(__builtin__, 'open', mock.mock_open()) as mo:
+			p = Project(mock_cl_args)			
+			p.prepare(mock_pipeline_params)
+
+		# the expected parameters
+		expected_param_dict = {'project_configuration_file': custom_cfg_filepath}
+		expected_param_dict.update(mock_cfg_dict)
+
+		self.assertEqual(p.project_params.get_param_dict(), expected_param_dict)
+
+
+class TestPipeline(unittest.TestCase):
+	"""
+	Tests the Pipeline object
+	"""
+
+	@mock.patch('utils.util_methods.os.path.join', side_effect=dummy_join)
+	@mock.patch('utils.config_parser.read')
+	@mock.patch('utils.util_methods.os')
+	def test_missing_default_pipeline_config_file(self, mock_os, mock_cfg_reader, mock_join):
 		"""
 		Assumptions-- os.listdir() finds a single .cfg file in the pipeline home directory.
 		No config file passed via commandline.
@@ -170,62 +214,16 @@ class TestPipeline(unittest.TestCase):
 		
 		default_cfg_name = 'default.cfg'
 
-		# mock the default config file being found in the home dir: 
-		mock_pipeline_os.listdir.return_value = [default_cfg_name]
-		mock_pipeline_os.path.isfile.return_value = True
-
-		# mock there being no command line arg passed for a different config file:
-		dummy_dict = {'configuration_file': None}
-
-		# mock the return from the reader
-		mock_cfg_dict = {'a':1, 'b':2}
-		mock_cfg_reader.return_value = mock_cfg_dict
+		# mock the default config file NOT being found in the home dir: 
+		mock_os.listdir.return_value = []
 
 		# create a Pipeline object, which will be populated with the mock return dictionary
 		dummy_path = "path/to/home"
 
-		with mock.patch.object(__builtin__, 'open', mock.mock_open()) as mo:
-			p = Pipeline(dummy_path, dummy_dict)
+		with self.assertRaises(ConfigFileNotFoundException):
+			p = Pipeline(dummy_path)
 			p.setup()
-		# the expected parameters
-		expected_param_dict = {'pipeline_home':dummy_path, 'configuration_file': os.path.join(dummy_path, default_cfg_name)}
-		expected_param_dict.update(mock_cfg_dict)
 
-		self.assertEqual(p.params.get_param_dict(), expected_param_dict)
-
-
-	@mock.patch('utils.pipeline.Pipeline.__verify_addons__') # mock this out so that that method does not throw an exception.
-	@mock.patch('utils.util_methods.os.path.join', side_effect=dummy_join)
-	@mock.patch('utils.config_parser.read')
-	@mock.patch('utils.util_methods.os')
-	def test_parses_alternative_config_file(self, mock_pipeline_os, mock_cfg_reader, mock_join, mock_m):
-		"""
-		Assumptions-- os.listdir() finds a single .cfg file in the pipeline home directory.
-		A custom config file passed via commandline.
-		"""
-		
-		# mock the missing config file: 
-		mock_pipeline_os.listdir.return_value = ['default.cfg']
-
-		# mock there being no command line arg passed for a different config file:
-		custom_cfg_filepath = '/path/to/custom.cfg'
-		dummy_dict = {'configuration_file': custom_cfg_filepath}
-
-		# mock the return from the reader
-		mock_cfg_dict = {'a':1, 'b':2}
-		mock_cfg_reader.return_value = mock_cfg_dict
-
-		# create a Pipeline object, which will be populated with the mock return dictionary
-		dummy_path = "path/to/home"
-
-		with mock.patch.object(__builtin__, 'open', mock.mock_open()) as mo:
-			p = Pipeline(dummy_path, dummy_dict)			
-			p.setup()
-		# the expected parameters
-		expected_param_dict = {'pipeline_home':dummy_path, 'configuration_file': custom_cfg_filepath}
-		expected_param_dict.update(mock_cfg_dict)
-
-		self.assertEqual(p.params.get_param_dict(), expected_param_dict)
 
 
 	@mock.patch('utils.util_methods.os.path.join', side_effect=dummy_join)
@@ -242,21 +240,20 @@ class TestPipeline(unittest.TestCase):
 		mock_os.listdir.return_value = [default_cfg_name]
 		mock_os.path.isfile.return_value = True
 
-		# mock there being no command line arg passed for a different config file, and receiving component+genome dirs
-		dummy_dict = {'configuration_file': None}
-
-		# mock the return from the reader
+		# mock the return from the reader- does not matter if this is a complete list of the actual, current pipeline components/pieces--
 		mock_cfg_dict = {'components_dir':'components', 'genomes_dir':'genome_info'}
 		mock_cfg_reader.return_value = mock_cfg_dict
 
 		# create a Pipeline object, which will be populated with the mock return dictionary
-		dummy_path = "path/to/home"
+		dummy_path = "/path/to/pipeline_home"
 
 		with mock.patch.object(__builtin__, 'open', mock.mock_open()) as mo:
-			p = Pipeline(dummy_path, dummy_dict)
-			# this mocks the directory not being found
+			p = Pipeline(dummy_path)
 			mock_os.path.isdir.return_value = False # this mocks the directory not being found
 			with self.assertRaises(MissingComponentDirectoryException):
+				# this ensures that the method looking for the directory returns a false.  Otherwise it is possible to pass
+				# a 'correct' mock parameter (i.e. a directory that actually does exist) which would cause the test to fail
+				mock_os.path.isdir.return_value = False   
 				p.setup()
 
 
@@ -264,6 +261,9 @@ class TestPipeline(unittest.TestCase):
 class TestConfigParser(unittest.TestCase):
 
 	def test_parser_correctly_parses_comma_list(self):
+		'''
+		The config files can contain comma-separated values-- ensure that the key gets mapped to a list composed of those comma-separated vals
+		'''
 
 		# sample text from a config file		
 		cfg_text = "[dummy_section] \na = 1 \nb = x, y, z"

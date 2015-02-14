@@ -9,7 +9,7 @@ sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
 from utils.os_utils import *
 from utils.custom_exceptions import CannotMakeOutputDirectoryException
 
-class PipelineSetupTest(unittest.TestCase):
+class OSUtilsTest(unittest.TestCase):
 	
 	@mock.patch('utils.os_utils.os')
 	def test_does_not_write_output_into_existing_directory(self, mock_os):

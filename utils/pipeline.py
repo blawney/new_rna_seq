@@ -22,8 +22,7 @@ class Pipeline(object):
 		self.__read_pipeline_config__()
 
 		# ensure that the necessary pipeline directories/structure is there:
-		necessary_components = ('genomes_dir', 'components_dir', 'utils_dir', 'project_configurations_dir')
-		[self.__verify_addons__(addon) for addon in necessary_components]
+		[self.__verify_addons__(addon) for addon in self.params.get_param_dict().keys()]
 
 		logging.info("After reading pipeline configuration: ")
 		logging.info(self.params)

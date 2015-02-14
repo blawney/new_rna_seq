@@ -2,6 +2,7 @@ import logging
 from util_classes import Params
 import util_methods
 import config_parser as cfg_parser
+from custom_exceptions import ConfigFileNotFoundException 
 
 class Project(object):
 
@@ -14,7 +15,6 @@ class Project(object):
 		self.__read_config__(pipeline_params.get('project_configurations_dir'))
 		logging.info('After reading project parameters:')
 		logging.info(self.project_params)
-		logging.info("********************")
 		logging.info(pipeline_params)
 
 	def __read_config__(self, directory):
