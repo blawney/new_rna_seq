@@ -12,6 +12,9 @@ from utils.custom_exceptions import *
 def dummy_join(a,b):
 	return os.path.join(a,b)
 
+def return_false(a,b):
+	return False
+
 class UtilMethodsTest(unittest.TestCase):
 
 	@mock.patch('utils.util_methods.os')
@@ -44,7 +47,32 @@ class UtilMethodsTest(unittest.TestCase):
 
 		mock_os.listdir.return_value = ['a.cfg']
 		self.assertEqual(locate_config('/path/to/dir'), '/path/to/dir/a.cfg')
-		
+
+
+	@mock.patch('utils.util_methods.os')
+	def test_missing_module_script(self, mock_os):
+		"""
+		This tests if a module is missing the 'main' script
+		"""		
+		mock_os.listdir.return_value = []
+		dummy_path = '/path/to/nothing'
+		self.assertFalse(component_structure_valid(dummy_path))
+
+
+	@mock.patch('utils.util_methods.os')
+	@mock.patch('utils.util_methods.imp')
+	def test_missing_module_script(self, mock_imp, mock_os):
+		"""
+		This tests if a module is missing the 'main' script
+		"""		
+		mock_os.listdir.return_value = ['main.py']
+		dummy_path = '/path/to/something'
+		mock_module = mock.MagicMock(spec=[])
+		mock_imp.load_source.return_value = mock_module
+
+		self.assertFalse(component_structure_valid(dummy_path))
+
+
 
 if __name__ == "__main__":
 	unittest.main()

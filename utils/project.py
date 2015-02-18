@@ -14,13 +14,17 @@ class Project(object):
 		self.project_params.add(cl_args)
 
 
-	def prepare(self, pipeline_params):
+	def get_params(self):
+		return self.project_params
 
+
+	def prepare(self, pipeline_params):
+		"""
+		Using the commandline arg and the pipeline parameters, complete some of the necessary paths, check that the args are valid, etc.
+		"""
 		self.__read_project_config(pipeline_params.get('project_configurations_dir'))
 		self.__check_samples_file()
 		self.__check_contrast_file()
-		self.__check_genome_valid(pipeline_params.get('available_genomes'))
-		self.__check_aligner_valid(pipeline_params.get('available_aligners'), pipeline_params.get('default_aligner'))
 
 		logging.info('After reading project parameters:')
 		logging.info(self.project_params)
@@ -31,14 +35,7 @@ class Project(object):
 		"""
 		This only checks that such a file exists-- not that it is correctly formatted.
 		"""
-		util_methods.check_for_file(self.project_params.get('sample_annotation_file'))
-
-
-	def __check_genome_valid(self, available_genomes):
-		if self.project_params.get('genome') not in available_genomes:
-			logging.error('Incorrect genome: %s', self.project_params.get('genome'))
-			logging.error('Available genomes: %s', available_genomes)
-			raise IncorrectGenomeException("Incorrect or unconfigured genome specified.  Check log and correct as necessary.")	
+		util_methods.check_for_file(self.project_params.get('sample_annotation_file'))	
 
 
 	def __check_contrast_file(self):
@@ -51,19 +48,11 @@ class Project(object):
 			util_methods.check_for_file(self.project_params.get('contrast_file'))
 
 
-	def __check_aligner_valid(self, available_aligners, default_aligner):
-
-		# if no aligner specified in commandline:
-		if not self.project_params.get('aligner'):
-			self.project_params.reset_param('aligner', default_aligner)
-		elif self.project_params.get('aligner') not in available_aligners:
-			logging.error('Incorrect aligner: %s', self.project_params.get('aligner'))
-			logging.error('Available aligners: %s', available_aligners)
-			raise IncorrectAlignerException("Unavailable aligner specified.  Check log and correct as necessary.")
-
 
 	def __read_project_config(self, directory):
-
+		"""
+		Reads the project configuration file (default or user-supplied via commandline)
+		"""
 		# if a custom configuration file was not given in cmd line args, use default:
 		if not self.project_params.get('project_configuration_file'):
 			self.project_params.reset_param('project_configuration_file', util_methods.locate_config(directory) )

@@ -1,8 +1,11 @@
 import logging
 import os
 from custom_exceptions import *
+import imp
 
 CONFIG_SUFFIX = "cfg"
+MAIN_SCRIPT = "main.py"
+ENTRY_METHOD = "run"
 
 def locate_config(directory):
 
@@ -28,3 +31,19 @@ def check_for_component_directory(directory):
 def check_for_file(filepath):
 	if not os.path.isfile(filepath):
 		raise MissingFileException('Missing a file: ' + str(filepath))
+
+
+def component_structure_valid(path):
+	if MAIN_SCRIPT in os.listdir(path):
+		module = imp.load_source('main', path)
+		print dir(module)
+		print hasattr(module, ENTRY_METHOD)
+		if hasattr(module, ENTRY_METHOD):
+			return True
+		else:
+			logging.warning("The component at %s is not configured correctly.  The script is present, but there is no entry method named: '%s'", path, ENTRY_METHOD)
+			return False	
+	else:
+		logging.warning("The component at %s is not configured correctly.  Does not have the main script named: '%s'", path, MAIN_SCRIPT)
+		return False
+		

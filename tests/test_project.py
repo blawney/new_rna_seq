@@ -120,6 +120,7 @@ class TestProject(unittest.TestCase):
 		with self.assertRaises(IncorrectAlignerException):
 			p._Project__check_aligner_valid(available_aligners, default_aligner)
 
+
 	def test_default_aligner_used_when_not_specified(self):
 		"""
 		If no commandline arg given for aligner, check that it resorts to the default

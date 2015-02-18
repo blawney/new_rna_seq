@@ -26,9 +26,18 @@ class Pipeline(object):
 
 		self.__get_available_genomes()
 		self.__get_available_aligners()
+		self.__get_available_components()
+
 		logging.info("After reading pipeline configuration: ")
 		logging.info(self.params)
 
+
+	def get_params(self):
+		return self.params
+
+
+	def get_available_components(self):
+		return self.available_components
 
 
 	def __get_available_genomes(self):
@@ -39,6 +48,20 @@ class Pipeline(object):
 	def __get_available_aligners(self):
 		aligner_cfg = util_methods.locate_config(self.params.get('aligners_dir'))
 		self.params.add(cfg_parser.read_config(aligner_cfg))	
+
+
+	def __get_available_components(self):
+				
+		components_dir = self.params.get('components_dir')
+		config_filepath = util_methods.locate_config(components_dir)
+		logging.info("Search for available components with configuration file at: %s", config_filepath)
+		available_components = cfg_parser.read_config(config_filepath)
+
+		# the paths in the dictionary above are relative to the components_dir-- prepend that directory name for the full path
+		available_components = {k:os.path.join(components_dir, available_components[k]) for k in available_components.keys()}
+
+		# check that the plugin components have the required structure
+		available_components = {k:available_components[k] for k in available_components.keys() if util_methods.component_structure_valid(available_components[k])}
 
 
 	def __verify_addons(self, addon):
@@ -58,12 +81,6 @@ class Pipeline(object):
 		logging.info("Default pipeline configuration file is: %s", config_filepath)
 		self.params.add(cfg_parser.read_config(config_filepath))
 
-
-	def add_project(self, project):
-		self.project = project
-
-	def prepare_project(self):
-		self.project.prepare(self.params)
 
 
 

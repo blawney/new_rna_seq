@@ -22,3 +22,6 @@ class IncorrectGenomeException(Exception):
 
 class IncorrectAlignerException(Exception):
 	pass
+
+class MalformattedComponentException(Exception):
+	pass
