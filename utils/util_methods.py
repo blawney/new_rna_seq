@@ -22,4 +22,9 @@ def locate_config(directory):
 
 def check_for_component_directory(directory):
 	if not os.path.isdir(directory):
-		raise MissingComponentDirectoryException
+		raise MissingComponentDirectoryException('Missing a necessary pipeline component: ' + str(directory))
+
+
+def check_for_file(filepath):
+	if not os.path.isfile(filepath):
+		raise MissingFileException('Missing a file: ' + str(filepath))

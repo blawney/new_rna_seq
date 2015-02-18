@@ -19,16 +19,29 @@ class Pipeline(object):
 	def setup(self):
 
 		self.project = None
-		self.__read_pipeline_config__()
+		self.__read_pipeline_config()
 
 		# ensure that the necessary pipeline directories/structure is there:
-		[self.__verify_addons__(addon) for addon in self.params.get_param_dict().keys()]
+		[self.__verify_addons(addon) for addon in self.params.get_param_dict().keys()]
 
+		self.__get_available_genomes()
+		self.__get_available_aligners()
 		logging.info("After reading pipeline configuration: ")
 		logging.info(self.params)
-		
 
-	def __verify_addons__(self, addon):
+
+
+	def __get_available_genomes(self):
+		genome_cfg = util_methods.locate_config(self.params.get('genomes_dir'))
+		self.params.add(cfg_parser.read_config(genome_cfg))		
+
+
+	def __get_available_aligners(self):
+		aligner_cfg = util_methods.locate_config(self.params.get('aligners_dir'))
+		self.params.add(cfg_parser.read_config(aligner_cfg))	
+
+
+	def __verify_addons(self, addon):
 		"""
 		For components, genomes, etc. complete the path to those directories (now that we know the pipeline_home dir)
 		Verify that they exist- otherwise we cannot initiate the pipeline 
@@ -38,19 +51,12 @@ class Pipeline(object):
 		
 
 
-	def __read_pipeline_config__(self):
+	def __read_pipeline_config(self):
 
 		# Read the pipeline-level config file
 		config_filepath = util_methods.locate_config(self.params.get('pipeline_home'))
 		logging.info("Default pipeline configuration file is: %s", config_filepath)
-		try:
-			with open(config_filepath, 'r') as cfg_fileobj:
-				self.params.add(cfg_parser.read(cfg_fileobj))
-		except IOError:
-			logging.error("Could not find configuration file at: %s", config_filepath)
-			raise ConfigFileNotFoundException("Configuration file was not found.")
-		except Exception as ex:
-			raise ex
+		self.params.add(cfg_parser.read_config(config_filepath))
 
 
 	def add_project(self, project):

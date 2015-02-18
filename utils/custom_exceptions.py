@@ -13,3 +13,12 @@ class ParameterNotFoundException(Exception):
 
 class MissingComponentDirectoryException(Exception):
 	pass
+
+class MissingFileException(Exception):
+	pass
+
+class IncorrectGenomeException(Exception):
+	pass
+
+class IncorrectAlignerException(Exception):
+	pass
