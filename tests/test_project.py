@@ -93,50 +93,6 @@ class TestProject(unittest.TestCase):
 
 
 
-	def test_bad_genome_parameter_raises_exception(self):
-		"""
-		Pass a genome parameter that is not specified in the genome config file
-		"""
-	
-		mock_cl_args = {'genome': 'XYZ'}
-		available_genomes = ('hg19', 'mm10')
-
-		p = Project(mock_cl_args)
-		with self.assertRaises(IncorrectGenomeException):
-			p._Project__check_genome_valid(available_genomes)
-
-	
-	def test_bad_aligner_parameter_raises_exception(self):
-		"""
-		Pass a aligner parameter that is not specified in the aligners config file
-		"""
-	
-		mock_cl_args = {'aligner': 'XYZ'}
-		available_aligners = ('star', 'snapr')
-		default_aligner = 'star'
-
-		p = Project(mock_cl_args)
-		
-		with self.assertRaises(IncorrectAlignerException):
-			p._Project__check_aligner_valid(available_aligners, default_aligner)
-
-
-	def test_default_aligner_used_when_not_specified(self):
-		"""
-		If no commandline arg given for aligner, check that it resorts to the default
-		"""
-	
-		mock_cl_args = {'aligner': None}
-		available_aligners = ('star', 'snapr')
-		default_aligner = 'star'
-
-		p = Project(mock_cl_args)
-
-		p._Project__check_aligner_valid(available_aligners, default_aligner)
-
-		self.assertEqual(p.project_params.get('aligner'), default_aligner)
-
-
 
 if __name__ == "__main__":
 	unittest.main()

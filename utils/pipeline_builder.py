@@ -76,7 +76,6 @@ class PipelineBuilder(object):
 		If aligner arg not correct, throw an exception
 		"""
 		
-		#print dir(self.project.get_params.get)
 		available_aligners = self.pipeline.get_params().get('available_aligners')
 		default_aligner = self.pipeline.get_params().get('default_aligner')
 

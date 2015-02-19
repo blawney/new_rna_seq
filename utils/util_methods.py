@@ -36,8 +36,6 @@ def check_for_file(filepath):
 def component_structure_valid(path):
 	if MAIN_SCRIPT in os.listdir(path):
 		module = imp.load_source('main', path)
-		print dir(module)
-		print hasattr(module, ENTRY_METHOD)
 		if hasattr(module, ENTRY_METHOD):
 			return True
 		else:
