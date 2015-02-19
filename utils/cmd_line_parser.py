@@ -24,7 +24,7 @@ def setup_args():
 
 	parser.add_argument("-s", "--samples",
 				required=True,
-				help="The name of the sample annotation file (for formatting, see documentation).  Assumed to be located in the project directory.",
+				help="The full path to a sample annotation file (for formatting, see documentation).",
 				dest="sample_annotation_file")
 
 	parser.add_argument("-a", "--aligner",

@@ -28,7 +28,6 @@ class Project(object):
 
 		logging.info('After reading project parameters:')
 		logging.info(self.project_params)
-		logging.info(pipeline_params)
 
 
 	def __check_samples_file(self):

@@ -25,3 +25,6 @@ class IncorrectAlignerException(Exception):
 
 class MalformattedComponentException(Exception):
 	pass
+
+class MissingAlignerConfigFileException(Exception):
+	pass

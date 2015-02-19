@@ -36,10 +36,21 @@ class UtilMethodsTest(unittest.TestCase):
 	@mock.patch('utils.util_methods.os.path.join', side_effect=dummy_join)
 	@mock.patch('utils.util_methods.os')
 	def test_multiple_config_files_raises_exception(self, mock_os, mock_join):
-
+		"""
+		Tests multiple configuration files with no way to distinguish via the prefix arg
+		"""
 		mock_os.listdir.return_value = ['a.cfg','b.cfg']
 		with self.assertRaises(MultipleConfigFileFoundException):
 			locate_config('/path/to/dir')
+
+
+	@mock.patch('utils.util_methods.os.path.join', side_effect=dummy_join)
+	@mock.patch('utils.util_methods.os')
+	def test_finds_file_with_desired_prefix(self, mock_os, mock_join):
+		mock_path = '/path/to/dir'
+		mock_os.listdir.return_value = ['hg19.cfg', 'mm10.cfg']
+		self.assertEqual(locate_config(mock_path, 'hg19'), os.path.join(mock_path, 'hg19.cfg'))
+
 
 	@mock.patch('utils.util_methods.os.path.join', side_effect=dummy_join)
 	@mock.patch('utils.util_methods.os')
@@ -61,7 +72,7 @@ class UtilMethodsTest(unittest.TestCase):
 
 	@mock.patch('utils.util_methods.os')
 	@mock.patch('utils.util_methods.imp')
-	def test_missing_module_script(self, mock_imp, mock_os):
+	def test_module_script_missing_entry_method(self, mock_imp, mock_os):
 		"""
 		This tests if a module is missing the 'main' script
 		"""		

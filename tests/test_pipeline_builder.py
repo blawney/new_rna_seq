@@ -71,15 +71,17 @@ class TestPipelineBuilder(unittest.TestCase):
 			p._PipelineBuilder__check_aligner_valid()
 
 
+	@mock.patch('utils.util_methods.locate_config')
 	@mock.patch('utils.pipeline_builder.Project')
 	@mock.patch('utils.pipeline_builder.Pipeline')
-	def test_default_aligner_used_when_not_specified(self, mock_pipeline, mock_project):
+	def test_default_aligner_used_when_not_specified(self, mock_pipeline, mock_project, mock_method):
 		"""
 		If no commandline arg given for aligner, check that it resorts to the default
 		"""
 	
 		available_aligners = ('star', 'snapr')
 		default_aligner = 'star'
+		#available_genomes = ('hg19', 'mm10')
 
 		# create a PipelineBuilder and add mocked pipeline/project objects as patches
 		p = PipelineBuilder('/path/to/dir')
@@ -87,16 +89,48 @@ class TestPipelineBuilder(unittest.TestCase):
 		p.project = mock_project.return_value
 
 		mock_pipeline_params = Params()
-		mock_pipeline_params.add(available_aligners = available_aligners)
-		mock_pipeline_params.add(default_aligner = default_aligner)
+		mock_pipeline_params.add(available_aligners = available_aligners, 
+					default_aligner = default_aligner, 
+					aligners_dir = '')
 		p.pipeline.get_params.return_value = mock_pipeline_params
 
 		mock_project_params = Params()
-		mock_project_params.add(aligner = None)
+		mock_project_params.add(aligner = None, genome = 'hg19')
 		p.project.get_params.return_value = mock_project_params
 		
+		mock_method.return_value = "a.cfg"
 		p._PipelineBuilder__check_aligner_valid()
 		self.assertEqual(p.project.get_params().get('aligner'), default_aligner)
+
+
+	@mock.patch('utils.util_methods.os')
+	@mock.patch('utils.pipeline_builder.Project')
+	@mock.patch('utils.pipeline_builder.Pipeline')
+	def test_missing_aligner_config_file_raises_exception(self, mock_pipeline, mock_project, mock_os):
+
+	
+		available_aligners = ('star', 'snapr')
+		default_aligner = 'star'
+		available_genomes = ('hg19', 'mm10')
+
+		# create a PipelineBuilder and add mocked pipeline/project objects as patches
+		p = PipelineBuilder('/path/to/dir')
+		p.pipeline = mock_pipeline.return_value
+		p.project = mock_project.return_value
+
+		mock_pipeline_params = Params()
+		mock_pipeline_params.add(available_aligners = available_aligners, 
+					default_aligner = default_aligner, 
+					available_genomes = available_genomes,
+					aligners_dir = '/path/to/aligner_dir')
+		p.pipeline.get_params.return_value = mock_pipeline_params
+
+		mock_project_params = Params()
+		mock_project_params.add(aligner = None, genome = 'XXX')
+		p.project.get_params.return_value = mock_project_params
+		with self.assertRaises(ConfigFileNotFoundException):
+			mock_os.listdir.return_value = ['hg19.cfg', 'mm10.cfg']
+			p._PipelineBuilder__check_aligner_valid()
 
 
 if __name__ == "__main__":

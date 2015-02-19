@@ -7,10 +7,9 @@ CONFIG_SUFFIX = "cfg"
 MAIN_SCRIPT = "main.py"
 ENTRY_METHOD = "run"
 
-def locate_config(directory):
-
+def locate_config(directory, prefix=''):
 	# search in the directory for a proper config file:
-	cfg_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(CONFIG_SUFFIX)]
+	cfg_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(CONFIG_SUFFIX) and f.startswith(prefix)]
 	if len(cfg_files) == 1:
 		logging.info("Located configuration file: %s", cfg_files[0])
 		return cfg_files[0]
@@ -35,7 +34,7 @@ def check_for_file(filepath):
 
 def component_structure_valid(path):
 	if MAIN_SCRIPT in os.listdir(path):
-		module = imp.load_source('main', path)
+		module = imp.load_source('main', os.path.join(path, MAIN_SCRIPT))
 		if hasattr(module, ENTRY_METHOD):
 			return True
 		else:

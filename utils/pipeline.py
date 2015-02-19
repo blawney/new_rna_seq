@@ -1,6 +1,7 @@
 import logging
 from util_classes import Params
 import config_parser as cfg_parser
+from printers import pretty_print
 import os
 import sys
 from custom_exceptions import *
@@ -24,7 +25,6 @@ class Pipeline(object):
 		# ensure that the necessary pipeline directories/structure is there:
 		[self.__verify_addons(addon) for addon in self.params.get_param_dict().keys()]
 
-		self.__get_available_genomes()
 		self.__get_available_aligners()
 		self.__get_available_components()
 
@@ -39,10 +39,11 @@ class Pipeline(object):
 	def get_available_components(self):
 		return self.available_components
 
+	def get_standard_components(self):
+		return self.standard_components
 
-	def __get_available_genomes(self):
-		genome_cfg = util_methods.locate_config(self.params.get('genomes_dir'))
-		self.params.add(cfg_parser.read_config(genome_cfg))		
+	def get_analysis_components(self):
+		return self.analysis_components
 
 
 	def __get_available_aligners(self):
@@ -55,13 +56,21 @@ class Pipeline(object):
 		components_dir = self.params.get('components_dir')
 		config_filepath = util_methods.locate_config(components_dir)
 		logging.info("Search for available components with configuration file at: %s", config_filepath)
-		available_components = cfg_parser.read_config(config_filepath)
+		available_components = cfg_parser.read_config(config_filepath, 'plugins')
 
 		# the paths in the dictionary above are relative to the components_dir-- prepend that directory name for the full path
 		available_components = {k:os.path.join(components_dir, available_components[k]) for k in available_components.keys()}
 
 		# check that the plugin components have the required structure
-		available_components = {k:available_components[k] for k in available_components.keys() if util_methods.component_structure_valid(available_components[k])}
+		self.available_components = {k:available_components[k] for k in available_components.keys() if util_methods.component_structure_valid(available_components[k])}
+		logging.info('Available components: ')
+		logging.info(pretty_print(self.available_components))
+
+		# get the specs for the standard components and the analysis components
+		self.standard_components = [c for c in cfg_parser.read_config(config_filepath, 'standard_plugins').values()[0] if c in self.available_components.keys()]
+		self.analysis_components = [c for c in cfg_parser.read_config(config_filepath, 'analysis_plugins').values()[0] if c in self.available_components.keys()]
+		logging.info('Standard components: %s', self.standard_components)
+		logging.info('Analysis components: %s', self.analysis_components)
 
 
 	def __verify_addons(self, addon):

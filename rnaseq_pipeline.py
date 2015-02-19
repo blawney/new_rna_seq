@@ -17,7 +17,7 @@ if __name__ == "__main__":
 		builder.create_pipeline()
 		builder.create_project()
 		builder.verify_args()
-		builder.register_components()
+		builder.build()
 
 	except Exception as ex:
 		logging.error("Exception thrown.  Message: %s", ex.message)
