@@ -81,5 +81,14 @@ class TestParams(unittest.TestCase):
 			p = Params()
 			p.reset_param('key', 'new_value')
 
+
+	def test_trying_reset_param_via_add_method_raises_exception(self):
+		with self.assertRaises(ParameterOverwriteException):
+			p = Params()
+			d = {"a":1, "b":2}
+			p.add(d)
+			p.add(a=3)
+
+
 if __name__ == "__main__":
 	unittest.main()

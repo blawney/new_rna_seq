@@ -1,7 +1,7 @@
 from printers import pretty_print
 import sys
 import logging
-from custom_exceptions import ParameterNotFoundException
+from custom_exceptions import ParameterNotFoundException, ParameterOverwriteException
 
 class Params(object):
 	def __init__(self):
@@ -52,6 +52,9 @@ class Params(object):
 		"""
 		try:
 			for k,v in d.iteritems():
-				self.__param_dict__[k]=v
+				if not k in self.__param_dict__:
+					self.__param_dict__[k]=v
+				else:
+					raise ParameterOverwriteException('Attempted to add/overwrite a parameter that was already set: %s' % k)
 		except AttributeError:
 			pass

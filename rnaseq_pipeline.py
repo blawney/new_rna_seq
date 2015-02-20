@@ -14,10 +14,10 @@ if __name__ == "__main__":
 		# build the pipeline:
 		builder = PipelineBuilder(pipeline_home)
 		builder.setup()
-		builder.create_pipeline()
-		builder.create_project()
-		builder.verify_args()
-		builder.build()
+		builder.configure()
+		configured_pipeline = builder.build()
+		configured_pipeline.summary()
+		
 
 	except Exception as ex:
 		logging.error("Exception thrown.  Message: %s", ex.message)
