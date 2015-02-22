@@ -44,3 +44,22 @@ def component_structure_valid(path):
 		logging.warning("The component at %s is not configured correctly.  Does not have the main script named: '%s'", path, MAIN_SCRIPT)
 		return False
 		
+
+
+def parse_annotation_file(annotation_filepath):
+	pairings = []
+	try:
+		with open(annotation_filepath, 'r') as annotation_file:
+			for line in annotation_file:
+				pair = line.strip().split('\t')
+				if len(pair) != 2:
+					raise AnnotationFileParseException("Line (%s) did not contain a sample-to-condition pair." % repr(line))
+				else:
+					pairings.append(tuple(pair))
+		return pairings
+	except Exception as ex:
+		logging.error("An exception occurred while attempting to parse the annotation file at %s", annotation_filepath)
+		raise AnnotationFileParseException(ex.message)		
+
+
+		

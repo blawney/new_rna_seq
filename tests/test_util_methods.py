@@ -1,6 +1,11 @@
+import logging
+logging.disable(logging.CRITICAL)
+
 import unittest
 import mock
 import sys
+import __builtin__
+from StringIO import StringIO
 
 # for finding modules in the sibling directories
 from os import path
@@ -12,8 +17,14 @@ from utils.custom_exceptions import *
 def dummy_join(a,b):
 	return os.path.join(a,b)
 
-def return_false(a,b):
-	return False
+
+def create_mock_open(fileobj):
+
+	mock_obj = mock.MagicMock(spec = file)
+	mock_obj.__enter__.return_value = fileobj
+	mock_obj.return_value = mock_obj
+	return mock_obj
+
 
 class UtilMethodsTest(unittest.TestCase):
 
@@ -84,6 +95,24 @@ class UtilMethodsTest(unittest.TestCase):
 		self.assertFalse(component_structure_valid(dummy_path))
 
 
+	def test_parse_annotation_file(self):
+		mock_data = 'A\tX\nB\tX\nC\tY'
+		expected_result = [('A','X'),('B','X'),('C','Y')]
+		mock_data = StringIO(mock_data)
+		mock_open = create_mock_open(mock_data)
+		with mock.patch.object(__builtin__, 'open', mock_open) as mo:
+			self.assertEqual(parse_annotation_file('/path/to/file'), expected_result)
+
+
+
+	def test_malformatted_annotation_file_raises_exception(self):
+		mock_data = 'A\tX\nB\nC\tY'
+		expected_result = [('A','X'),('B','X'),('C','Y')]
+		mock_data = StringIO(mock_data)
+		mock_open = create_mock_open(mock_data)
+		with mock.patch.object(__builtin__, 'open', mock_open) as mo:
+			with self.assertRaises(AnnotationFileParseException):
+				parse_annotation_file('/path/to/file')
 
 if __name__ == "__main__":
 	unittest.main()

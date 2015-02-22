@@ -31,3 +31,6 @@ class MissingAlignerConfigFileException(Exception):
 
 class ParameterOverwriteException(Exception):
 	pass
+
+class AnnotationFileParseException(Exception):
+	pass
