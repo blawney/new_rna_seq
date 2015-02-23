@@ -13,6 +13,7 @@ from os import path
 sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
 
 import utils.config_parser
+from utils.custom_exceptions import * 	
 
 
 class TestConfigParser(unittest.TestCase):
@@ -96,24 +97,21 @@ class TestConfigParser(unittest.TestCase):
 		self.assertEqual(result, expected_result)
 
 
-	def test_parser_correctly_returns_empty_dict_if_section_missing(self):
+	def test_raises_exception_if_section_missing(self):
 		'''
-		The config files can have multiple sections-- see that we correctly can get nothing back if we ask for a section that is not in the file
+		The config files can have multiple sections-- see that we raise an exception if we ask for a section that is not in the file
 		'''
 
 		# sample text from a config file		
 		cfg_text = "[dummy_section] \na = 1 \nb = x \n[desired_section] \nc=foo \nd=bar"
-		
-		# expected dictionary result:
-		expected_result = {'c':'foo', 'd': 'bar'}
 
 		#create a fake config file-like object using StringIO
 		fake_file = StringIO.StringIO()
 		fake_file.write(cfg_text)
 		fake_file.seek(0)
 
-		result = utils.config_parser.parse(fake_file, 'junk')
-		self.assertEqual(result, {})
+		with self.assertRaises(MissingConfigFileSectionException):
+			utils.config_parser.parse(fake_file, 'junk')
 
 
 if __name__ == "__main__":

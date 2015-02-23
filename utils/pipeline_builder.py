@@ -50,21 +50,21 @@ class PipelineBuilder(object):
 
 	def build(self):
 		pipeline = Pipeline(self.builder_params)
-		pipeline.register_components(self.assemble_components())
+		pipeline.register_components(self.determine_components())
 		return pipeline
 
 
-	def assemble_components(self):
+	def determine_components(self):
 		"""
 		This method contains the logic for which components to use, etc. in the pipeline 
 		"""
 		# a dict of component names mapped to component locations
 		components_dict = self.available_components
 	
-		components = [Component(name, components_dict[name], self.builder_params) for name in self.standard_components]
+		components = [(name, components_dict[name]) for name in self.standard_components]
 
 		if not self.builder_params.get('skip_analysis'):
-			components.extend([Component(name, components_dict[name], self.builder_params) for name in self.analysis_components])
+			components.extend([(name, components_dict[name]) for name in self.analysis_components])
 		else:
 			logging.info('Skipping analysis per the input args')
 
@@ -79,6 +79,13 @@ class PipelineBuilder(object):
 				
 		components_dir = self.builder_params.get('components_dir')
 		config_filepath = util_methods.locate_config(components_dir)
+
+		# get the plugin parameters-- i.e. each component needs to have a script and entry method to call.
+		plugin_parameters = cfg_parser.read_config(config_filepath, 'plugin_params')
+		self.builder_params.add(plugin_parameters)
+		entry_module = plugin_parameters['entry_module'] #the script filename
+		entry_method = plugin_parameters['entry_method']
+
 		logging.info("Search for available components with configuration file at: %s", config_filepath)
 		available_components = cfg_parser.read_config(config_filepath, 'plugins')
 
@@ -86,7 +93,11 @@ class PipelineBuilder(object):
 		available_components = {k:os.path.join(components_dir, available_components[k]) for k in available_components.keys()}
 
 		# check that the plugin components have the required structure
-		self.available_components = {k:available_components[k] for k in available_components.keys() if util_methods.component_structure_valid(available_components[k])}
+		self.available_components = {}
+		for k in available_components.keys():
+			if util_methods.component_structure_valid(available_components[k], entry_module, entry_method):
+				self.available_components[k] = available_components[k]
+
 		logging.info('Available components: ')
 		logging.info(pretty_print(self.available_components))
 
@@ -121,7 +132,9 @@ class PipelineBuilder(object):
 		genomes_dir = self.builder_params.get('genomes_dir')
 		selected_genome = self.builder_params.get('genome')		
 		try:
-			util_methods.locate_config(genomes_dir, selected_genome)
+			config_filepath = util_methods.locate_config(genomes_dir)
+			self.builder_params.add(cfg_parser.read_config(config_filepath), selected_genome)
+
 		except Exception as ex:
 			logging.error('Caught exception while looking for genome configuration file: ')
 			logging.error(ex.message)

@@ -4,8 +4,6 @@ from custom_exceptions import *
 import imp
 
 CONFIG_SUFFIX = "cfg"
-MAIN_SCRIPT = "main.py"
-ENTRY_METHOD = "run"
 
 def locate_config(directory, prefix=''):
 	# search in the directory for a proper config file:
@@ -32,16 +30,16 @@ def check_for_file(filepath):
 		raise MissingFileException('Missing a file: ' + str(filepath))
 
 
-def component_structure_valid(path):
-	if MAIN_SCRIPT in os.listdir(path):
-		module = imp.load_source('main', os.path.join(path, MAIN_SCRIPT))
-		if hasattr(module, ENTRY_METHOD):
+def component_structure_valid(path, main_script, entry_method):
+	if main_script in os.listdir(path):
+		module = imp.load_source('main', os.path.join(path, main_script))
+		if hasattr(module, entry_method):
 			return True
 		else:
-			logging.warning("The component at %s is not configured correctly.  The script is present, but there is no entry method named: '%s'", path, ENTRY_METHOD)
+			logging.warning("The component at %s is not configured correctly.  The script is present, but there is no entry method named: '%s'", path, entry_method)
 			return False	
 	else:
-		logging.warning("The component at %s is not configured correctly.  Does not have the main script named: '%s'", path, MAIN_SCRIPT)
+		logging.warning("The component at %s is not configured correctly.  Does not have the main script named: '%s'", path, main_script)
 		return False
 		
 

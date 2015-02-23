@@ -5,6 +5,9 @@ class ConfigFileNotFoundException(Exception):
 class MultipleConfigFileFoundException(Exception):
 	pass
 
+class MissingConfigFileSectionException(Exception):
+	pass
+
 class CannotMakeOutputDirectoryException(Exception):
 	pass
 

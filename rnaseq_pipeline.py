@@ -16,8 +16,8 @@ if __name__ == "__main__":
 		builder.setup()
 		builder.configure()
 		configured_pipeline = builder.build()
+		configured_pipeline.run()
 		configured_pipeline.summary()
-		
 
 	except Exception as ex:
 		logging.error("Exception thrown.  Message: %s", ex.message)

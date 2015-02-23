@@ -78,7 +78,7 @@ class UtilMethodsTest(unittest.TestCase):
 		"""		
 		mock_os.listdir.return_value = []
 		dummy_path = '/path/to/nothing'
-		self.assertFalse(component_structure_valid(dummy_path))
+		self.assertFalse(component_structure_valid(dummy_path, 'script.py', 'run'))
 
 
 	@mock.patch('utils.util_methods.os')
@@ -87,12 +87,12 @@ class UtilMethodsTest(unittest.TestCase):
 		"""
 		This tests if a module is missing the 'main' script
 		"""		
-		mock_os.listdir.return_value = ['main.py']
+		mock_os.listdir.return_value = ['script.py']
 		dummy_path = '/path/to/something'
 		mock_module = mock.MagicMock(spec=[])
 		mock_imp.load_source.return_value = mock_module
 
-		self.assertFalse(component_structure_valid(dummy_path))
+		self.assertFalse(component_structure_valid(dummy_path, 'script.py', 'run'))
 
 
 	def test_parse_annotation_file(self):
