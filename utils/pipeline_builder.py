@@ -19,7 +19,9 @@ class PipelineBuilder(object):
 		self.builder_params.add(pipeline_home = pipeline_home_dir)
 
 	def setup(self):
-
+		"""
+		Parses commandline input, creates the output directory, instantiates a log file
+		"""
 		self.builder_params.add(cl_parser.read())
 
 		# create the output directory (if possible) from the commandline args
@@ -31,6 +33,9 @@ class PipelineBuilder(object):
 
 
 	def configure(self):
+		"""
+		Reads the configuration file, checks the commandline args against the available/configured components
+		"""
 
 		# read the config file and ensure that the necessary pipeline directories/structure is there:
 		pipeline_elements_dict = self.__read_pipeline_config()
@@ -76,14 +81,16 @@ class PipelineBuilder(object):
 
 
 	def __get_available_components(self):
-				
+		"""
+		
+		"""
 		components_dir = self.builder_params.get('components_dir')
 		config_filepath = util_methods.locate_config(components_dir)
 
 		# get the plugin parameters-- i.e. each component needs to have a script and entry method to call.
 		plugin_parameters = cfg_parser.read_config(config_filepath, 'plugin_params')
 		self.builder_params.add(plugin_parameters)
-		entry_module = plugin_parameters['entry_module'] #the script filename
+		entry_module = plugin_parameters['entry_module'] #the script filename (minus the .py extension) 
 		entry_method = plugin_parameters['entry_method']
 
 		logging.info("Search for available components with configuration file at: %s", config_filepath)
@@ -128,6 +135,7 @@ class PipelineBuilder(object):
 	def __check_genome_valid(self):
 		"""
 		Ensure that the desired genome is acceptable.  If not, throw an exception
+		If the appropriate genome is found, read-in the genome parameters (e.g. path to GTF file, etc)
 		"""
 		genomes_dir = self.builder_params.get('genomes_dir')
 		selected_genome = self.builder_params.get('genome')		
@@ -186,6 +194,10 @@ class PipelineBuilder(object):
 		
 
 	def __check_project_config(self):
+		"""
+		Reads a project configuration file-- this configuration file lays out how a typical project is arranged in terms of file hierarchy,
+		naming of fastq files, etc.
+		"""
 		# Read the project-level config file
 		if not self.builder_params.get('project_configuration_file'):
 			default_filepath = util_methods.locate_config(self.builder_params.get('project_configurations_dir'), 'default')

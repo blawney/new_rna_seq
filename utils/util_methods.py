@@ -31,6 +31,8 @@ def check_for_file(filepath):
 
 
 def component_structure_valid(path, main_script, entry_method):
+	# have to add the .py extension to match the filename
+	main_script = str(main_script) + '.py'
 	if main_script in os.listdir(path):
 		module = imp.load_source('main', os.path.join(path, main_script))
 		if hasattr(module, entry_method):
