@@ -16,6 +16,7 @@ class Pipeline(object):
 	def register_components(self, components):
 		self.components = components
 
+
 	def summary(self):
 		print '**************************'
 		print self.params
@@ -26,7 +27,8 @@ class Pipeline(object):
 	def run(self):
 		self.__collect_samples()
 
-		if not self.params.get('skip_align'):
+		if not self.params.get('skip_align'):			
+
 			#call align setup
 			self.__align_samples()
 		else:

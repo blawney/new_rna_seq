@@ -51,7 +51,7 @@ class UtilMethodsTest(unittest.TestCase):
 		Tests multiple configuration files with no way to distinguish via the prefix arg
 		"""
 		mock_os.listdir.return_value = ['a.cfg','b.cfg']
-		with self.assertRaises(MultipleConfigFileFoundException):
+		with self.assertRaises(MultipleFileFoundException):
 			locate_config('/path/to/dir')
 
 
@@ -113,6 +113,7 @@ class UtilMethodsTest(unittest.TestCase):
 		with mock.patch.object(__builtin__, 'open', mock_open) as mo:
 			with self.assertRaises(AnnotationFileParseException):
 				parse_annotation_file('/path/to/file')
+
 
 if __name__ == "__main__":
 	unittest.main()

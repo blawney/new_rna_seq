@@ -2,7 +2,7 @@
 class ConfigFileNotFoundException(Exception):
 	pass
 
-class MultipleConfigFileFoundException(Exception):
+class MultipleFileFoundException(Exception):
 	pass
 
 class MissingConfigFileSectionException(Exception):
@@ -37,3 +37,8 @@ class ParameterOverwriteException(Exception):
 
 class AnnotationFileParseException(Exception):
 	pass
+
+class ProjectStructureException(Exception):
+	pass
+
+class 

@@ -2,6 +2,7 @@ import logging
 import os
 from custom_exceptions import *
 import imp
+import re
 
 CONFIG_SUFFIX = "cfg"
 
@@ -14,11 +15,17 @@ def locate_config(directory, prefix=''):
 	elif len(cfg_files) > 1:
 		logging.error("Located multiple config files (*.cfg) in %s.  Cannot determine which one to use. ", directory)
 		logging.error("Config files: %s", cfg_files)
-		raise MultipleConfigFileFoundException("Multiple configuration files found.  Cannot determine which to use.")
+		raise MultipleFileFoundException("Multiple configuration files found.  Cannot determine which to use.")
 	else:
 		logging.error("Could not locate any config files (*.cfg) in %s.", directory)
 		raise ConfigFileNotFoundException("Could not locate any configuration files.")
 
+
+def walk(root_dir, pattern):
+	matching_files = []
+	for root, dirs, files in os.walk(root_dir):
+		for f in files:
+			pass	
 
 def check_for_component_directory(directory):
 	if not os.path.isdir(directory):

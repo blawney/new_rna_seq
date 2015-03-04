@@ -7,9 +7,11 @@ import datetime
 import logging
 import os
 import os_utils
+import glob
 from pipeline import Pipeline
 from component import Component
 from custom_exceptions import *
+from sample import Sample
 
 
 class PipelineBuilder(object):
@@ -45,9 +47,11 @@ class PipelineBuilder(object):
 		self.__check_project_config()
 		self.__check_genome_valid() 
 		self.__check_aligner_valid()
-		self.__check_samples_file()
 		self.__check_contrast_file()
 		self.__get_available_components()
+
+		self.all_samples = [] # 
+		self.__check_and_create_samples()
 
 		logging.info("After reading pipeline configuration: ")
 		logging.info(self.builder_params)
@@ -115,11 +119,56 @@ class PipelineBuilder(object):
 		logging.info('Analysis components: %s', self.analysis_components)
 
 
-	def __check_samples_file(self):
+	def __check_and_create_samples(self):
 		"""
-		This only checks that such a file exists-- not that it is correctly formatted.
+		This method reads the samples in the sample annotation file and determines if:
+		1) if performing alignment, the directory structure is correct and the necessary files are there
+		2) if alignment is skipped (i.e. have BAM files), the necessary BAM files are there
 		"""
-		util_methods.check_for_file(self.builder_params.get('sample_annotation_file'))	
+		logging.info('Checking sample annotation file against project directory.')
+		# the name of the sample and the condition, as a list of tuples:
+		name_and_condition_pairings = util_methods.parse_annotation_file(self.params.get('sample_annotation_file'))
+		logging.info('The following sample to group pairings were found in the sample annotation file: ')
+		logging.info(name_and_condition_pairings)
+
+		for sample_name, condition in name_and_condition_pairings:
+				logging.info('Checking sample %s' % sample_name)
+			if not self.builder_params.get('skip_align'): # if aligning
+				directory_name = self.builder_params.get('sample_dir_prefix') + sample_name
+				expected_directory = os.path.join(self.builder_params.get('project_directory'), directory_name)
+				if os.path.isdir(expected_directory):
+
+					# get a list of the fastq files matching the appropriate pattern:
+					read_1_files = glob.glob(os.path.join(expected_directory, '*' + self.builder_params.get('read_1_fastq_tag')))
+					read_2_files = glob.glob(os.path.join(expected_directory, '*' + self.builder_params.get('read_2_fastq_tag')))
+
+					if len(read_1_files) != 1:
+						logging.error('Problem finding read 1 fastq files for sample %s inside %s' % (sample_name, expected_directory))
+						if len(read_1_files) == 0:
+							raise MissingFileException('There were no R1 fastq files found.')
+						else:
+							raise MultipleFileFoundException('There was more than 1 fastq file marked with the suffix %s inside %s' % (self.builder_params.get('read_1_fastq_tag'),expected_directory))
+
+					if self.builder_params.get('paired_alignment') and len(read_2_files) != 1:
+						logging.error('Paired-end alignment was specified on commandline.  However, there was a problem with read 2 fastq files for sample %s inside %s' % (sample_name, expected_directory))
+						if len(read_2_files) == 0:
+							raise MissingFileException('There were no R2 fastq files found.')
+						else:
+							raise MultipleFileFoundException('There was more than 1 fastq file marked with the suffix %s inside %s' % (self.builder_params.get('read_2_fastq_tag'),expected_directory))
+
+					if self.builder_params.get('paired_alignment'):
+						self.all_samples.append(Sample(sample_name, condition, read_1_fastq = read_1_files[0], read_2_fastq = read_2_files[0]))
+					else:
+						self.all_samples.append(Sample(sample_name, condition, read_1_fastq = read_1_files[0]))
+					
+				else:
+					logging.error('%s was not, in fact, a directory or the name scheme was incorrect.' % expected_directory)
+					raise ProjectStructureException('The sample directory %s does not exist' % expected_directory)
+			else: # if skipping alignment:
+				
+				# TODO:
+				util_methods.walk(...) 
+		
 
 
 	def __check_contrast_file(self):
