@@ -11,8 +11,16 @@ class Params(object):
 		return pretty_print(self.__param_dict__)
 
 
+	def __add__(self, other):
+		new_p = Params()
+		new_p.add(self.get_param_dict())
+		new_p.add(other.get_param_dict())
+		return new_p
+
+
 	def get_param_dict(self):
 		return self.__param_dict__
+
 
 	def get(self, name):
 		"""

@@ -87,6 +87,7 @@ class TestPipelineBuilder(unittest.TestCase):
 					aligners_dir = '/path/to/dir',
 					genome = 'hg19')
 		p.builder_params = mock_pipeline_params
+		p.all_components = []
 		p._PipelineBuilder__get_aligner_info = mock.Mock()
 
 		mock_os.listdir.return_value = ['hg19.cfg', 'mm10.cfg']

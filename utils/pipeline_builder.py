@@ -11,6 +11,7 @@ from pipeline import Pipeline
 from component import Component
 from custom_exceptions import *
 from sample import Sample
+from project import Project
 import itertools
 
 
@@ -43,25 +44,37 @@ class PipelineBuilder(object):
 		pipeline_elements_dict = self.__read_pipeline_config()
 		self.__verify_elements(pipeline_elements_dict)
 
+		# create an empty list that will hold Component objects
+		self.all_components = []
+
 		# check parameters passed via commandline
 		self.__check_project_config()
-		self.__check_genome_valid() 
-		self.__check_aligner_valid()
-		self.__get_available_components()
-
 		self.all_samples = [] 
 		self.__check_and_create_samples()
 		self.__check_contrast_file()
+
+		self.__check_genome_valid()
+
+		if not self.builder_params.get('skip_align'):
+			self.__check_aligner_valid()
+
+		self.determine_components()
 
 		logging.info("After reading pipeline configuration: ")
 		logging.info(self.builder_params)
 
 
 	def build(self):
-		pipeline = Pipeline(self.builder_params)
-		pipeline.add_samples(self.all_samples)
-		pipeline.add_contrasts(self.contrasts)
-		pipeline.register_components(self.determine_components())
+		pipeline = Pipeline()
+		pipeline.register_components(self.all_components)
+
+		project = Project()
+		project.add_parameters(self.builder_params)
+		project.add_samples(self.all_samples)
+		project.add_contrasts(self.contrasts)
+
+		pipeline.add_project(project)
+
 		return pipeline
 
 
@@ -69,21 +82,24 @@ class PipelineBuilder(object):
 		"""
 		This method contains the logic for which components to use, etc. in the pipeline 
 		"""
+		# call a method that inspects the components and ensures they are correctly configured
+		self.__get_available_components()
+
 		# a dict of component names mapped to component locations
 		components_dict = self.available_components
-	
-		components = [(name, components_dict[name]) for name in self.standard_components]
+
+		# create the components that are always invoked:
+		for name in self.standard_components:
+			logging.info('Creating component: %s' % name)
+			self.all_components.append(Component(name, components_dict[name]))
 
 		if not self.builder_params.get('skip_analysis'):
-			components.extend([(name, components_dict[name]) for name in self.analysis_components])
+			for name in self.analysis_components:
+				logging.info('Creating component: %s' % name)
+				self.all_components.append(Component(name, components_dict[name]))
 		else:
 			logging.info('Skipping analysis per the input args')
 
-		logging.info('Final pipeline components to use:')
-		for comp in components:
-			logging.info(comp)
-
-		return components
 
 
 	def __get_available_components(self):
@@ -256,6 +272,9 @@ class PipelineBuilder(object):
 		aligner_specific_dir = os.path.join( self.builder_params.get('aligners_dir'), aligner)
 		logging.info('Searching for aligner-specific configuration file in %s', aligner_specific_dir)
 		util_methods.locate_config(aligner_specific_dir, chosen_genome)
+
+		# create a component for the aligner:
+		self.all_components.append(Component(aligner, aligner_specific_dir))
 
 
 	def __get_aligner_info(self):

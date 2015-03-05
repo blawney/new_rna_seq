@@ -89,6 +89,50 @@ class TestParams(unittest.TestCase):
 			p.add(d)
 			p.add(a=3)
 
+	def test_addition_of_param_objects(self):
+		"""
+		This tests the operator overload of '+'
+		"""
+		p1 = Params()
+		p1.add( a = 1, b = 2)
+		p2 = Params()
+		p2.add( c = 3, d = 4)
+
+		p3 = p1 + p2
+		self.assertEqual(p3.get("a"), 1)
+		self.assertEqual(p3.get("b"), 2)
+		self.assertEqual(p3.get("c"), 3)
+		self.assertEqual(p3.get("d"), 4)
+
+	def test_shorthand_addition_of_param_objects(self):
+		"""
+		This tests the operator overload of '+'
+		"""
+		p1 = Params()
+		p1.add( a = 1, b = 2)
+		p2 = Params()
+		p2.add( c = 3, d = 4)
+
+		p1 += p2
+		self.assertEqual(p1.get("a"), 1)
+		self.assertEqual(p1.get("b"), 2)
+		self.assertEqual(p1.get("c"), 3)
+		self.assertEqual(p1.get("d"), 4)
+
+
+	def test_raises_exception_if_adding_param_objects_with_same_values(self):
+		"""
+		This tests the operator overload of '+'
+		"""
+		p1 = Params()
+		p1.add( a = 1, b = 2)
+		p2 = Params()
+		p2.add( a = 3, d = 4)
+
+		with self.assertRaises(ParameterOverwriteException):
+			p3 = p1 + p2
+
+
 
 if __name__ == "__main__":
 	unittest.main()
