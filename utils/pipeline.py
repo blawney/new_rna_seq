@@ -17,6 +17,13 @@ class Pipeline(object):
 		self.components = components
 
 
+	def add_samples(self, sample_list):
+		self.sample_list = sample_list
+
+	def add_contrasts(self, contrasts):
+		self.contrasts = contrasts
+
+
 	def summary(self):
 		print '**************************'
 		print self.params
@@ -24,21 +31,20 @@ class Pipeline(object):
 		for comp in self.components:
 			print comp
 
+		print '**************************'
+		for s in self.sample_list:
+			print s
+		print '**************************'
+		print '**************************'
+		print self.contrasts
+		print '**************************'
+
 	def run(self):
-		self.__collect_samples()
 
 		if not self.params.get('skip_align'):			
 
 			#call align setup
 			self.__align_samples()
-		else:
-			pass
-			#find bam files
-
-
-	def __collect_samples(self):
-		name_and_condition_pairings = util_methods.parse_annotation_file(self.params.get('sample_annotation_file'))
-		self.samples = tuple([Sample(name, condition) for name, condition in name_and_condition_pairings])
 
 
 	def __align_samples(self):
@@ -46,7 +52,7 @@ class Pipeline(object):
 		# create a Component for the aligner
 		aligner_name = self.params.get('aligner')
 		aligner_dir = os.path.join(self.params.get('aligners_dir'), aligner_name)
-		aligner = Component(aligner_name, aligner_dir, self.params, self.samples)
+		aligner = Component(aligner_name, aligner_dir, self.params, self.sample_list)
 		aligner.run()
 
 

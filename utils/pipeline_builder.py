@@ -11,6 +11,7 @@ from pipeline import Pipeline
 from component import Component
 from custom_exceptions import *
 from sample import Sample
+import itertools
 
 
 class PipelineBuilder(object):
@@ -46,11 +47,11 @@ class PipelineBuilder(object):
 		self.__check_project_config()
 		self.__check_genome_valid() 
 		self.__check_aligner_valid()
-		self.__check_contrast_file()
 		self.__get_available_components()
 
 		self.all_samples = [] 
 		self.__check_and_create_samples()
+		self.__check_contrast_file()
 
 		logging.info("After reading pipeline configuration: ")
 		logging.info(self.builder_params)
@@ -58,6 +59,8 @@ class PipelineBuilder(object):
 
 	def build(self):
 		pipeline = Pipeline(self.builder_params)
+		pipeline.add_samples(self.all_samples)
+		pipeline.add_contrasts(self.contrasts)
 		pipeline.register_components(self.determine_components())
 		return pipeline
 
@@ -158,9 +161,12 @@ class PipelineBuilder(object):
 							raise MultipleFileFoundException('There was more than 1 fastq file marked with the suffix %s inside %s' % (self.builder_params.get('read_2_fastq_tag'),expected_directory))
 
 					if self.builder_params.get('paired_alignment'):
-						self.all_samples.append(Sample(sample_name, condition, read_1_fastq = read_1_files[0], read_2_fastq = read_2_files[0]))
+						new_sample = Sample(sample_name, condition, read_1_fastq = read_1_files[0], read_2_fastq = read_2_files[0])
 					else:
-						self.all_samples.append(Sample(sample_name, condition, read_1_fastq = read_1_files[0]))
+						new_sample = Sample(sample_name, condition, read_1_fastq = read_1_files[0])
+
+					logging.info('Adding new sample:\n %s' % new_sample)
+					self.all_samples.append(new_sample)
 					
 				else:
 					logging.error('%s was not, in fact, a directory or the name scheme was incorrect.' % expected_directory)
@@ -168,18 +174,40 @@ class PipelineBuilder(object):
 			else: # if skipping alignment:
 				search_pattern = sample_name + '.*?' + self.builder_params.get('target_bam')
 				bam_file = util_methods.find_file(self.builder_params.get('project_directory'), search_pattern)
-				self.all_samples.append(Sample(sample_name, condition, bamfile = bam_file))
+				new_sample = Sample(sample_name, condition, bamfile = bam_file)
+				logging.info('Adding new sample:\n %s' % new_sample)
+				self.all_samples.append(new_sample)
 		
 
 
 	def __check_contrast_file(self):
 		"""
-		This only checks that such a file exists-- not that it is correctly formatted.
-		Does not check whether the file is even necessary or consistent with input parameters.
-		For example, if the user wishes to skip the analysis, then we do not need a contrast file...if one is given, we do not care that it makes no sense in that context.
+		Logic for the experimental contrasts if downstream analysis is desired.
 		"""
-		if self.builder_params.get('contrast_file'):
-			util_methods.check_for_file(self.builder_params.get('contrast_file'))
+		if not self.builder_params.get('skip_analysis'):
+
+			# from the samples we had earlier, get all the possible conditions
+			conditions = set([sample.condition for sample in self.all_samples])
+			logging.info('All conditions represented in the samples: %s' % conditions)
+
+			# if contrast file path was given in command line:
+			if self.builder_params.get('contrast_file'):
+				contrast_pairings = util_methods.parse_annotation_file(self.builder_params.get('contrast_file'))	
+			else:
+				# if no contrast file was given, get all pairwise contrasts:
+				contrast_pairings = set(itertools.combinations(conditions, 2))
+
+			logging.info('Contrast pairings before checking against sample annotations: %s' % contrast_pairings)
+			# check that the condition specifications make sense given the samples (if we specify a contrast against condition A, but no samples are annotated as condition A, then issue an error)
+			for condition_a, condition_b in contrast_pairings:
+				if not condition_a in conditions or not condition_b in conditions:
+					raise ContrastSpecificationException('Either condition %s or %s is not represented by any samples' % (condition_a, condition_b))
+			self.contrasts = contrast_pairings
+		else:
+			self.contrasts =  None
+
+		logging.info('Final contrast pairings: %s' % self.contrasts)
+
 
 
 	def __check_genome_valid(self):

@@ -70,16 +70,19 @@ def component_structure_valid(path, main_script, entry_method):
 
 
 def parse_annotation_file(annotation_filepath):
+	"""
+	This method parses a two-column annotation file (sample annotation or contrast annotations) and returns a list of tuples
+	"""
 	pairings = []
 	try:
 		with open(annotation_filepath, 'r') as annotation_file:
 			for line in annotation_file:
 				pair = line.strip().split('\t')
 				if len(pair) != 2:
-					raise AnnotationFileParseException("Line (%s) did not contain a sample-to-condition pair." % repr(line))
+					raise AnnotationFileParseException("Line (%s) did not contain an annotation pair." % repr(line))
 				else:
 					pairings.append(tuple(pair))
-		return pairings
+		return set(pairings)
 	except Exception as ex:
 		logging.error("An exception occurred while attempting to parse the annotation file at %s", annotation_filepath)
 		raise AnnotationFileParseException(ex.message)		

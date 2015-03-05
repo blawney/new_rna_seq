@@ -97,7 +97,7 @@ class UtilMethodsTest(unittest.TestCase):
 
 	def test_parse_annotation_file(self):
 		mock_data = 'A\tX\nB\tX\nC\tY'
-		expected_result = [('A','X'),('B','X'),('C','Y')]
+		expected_result = set([('A','X'),('B','X'),('C','Y')])
 		mock_data = StringIO(mock_data)
 		mock_open = create_mock_open(mock_data)
 		with mock.patch.object(__builtin__, 'open', mock_open) as mo:
@@ -110,6 +110,13 @@ class UtilMethodsTest(unittest.TestCase):
 		expected_result = [('A','X'),('B','X'),('C','Y')]
 		mock_data = StringIO(mock_data)
 		mock_open = create_mock_open(mock_data)
+		with mock.patch.object(__builtin__, 'open', mock_open) as mo:
+			with self.assertRaises(AnnotationFileParseException):
+				parse_annotation_file('/path/to/file')
+
+
+	def test_missing_annotation_file_raises_exception(self):
+		mock_open = mock.Mock(side_effect = IOError)
 		with mock.patch.object(__builtin__, 'open', mock_open) as mo:
 			with self.assertRaises(AnnotationFileParseException):
 				parse_annotation_file('/path/to/file')

@@ -13,12 +13,22 @@ sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
 
 from utils.pipeline_builder import PipelineBuilder
 from utils.util_classes import Params
+from utils.sample import Sample
 from utils.custom_exceptions import *
 
 
 def my_join(*args):
 		return reduce(lambda x,y: os.path.join(x,y), args)
 
+
+def set_of_tuples_is_equivalent(set_a, set_b):
+	v = []
+	for i,item in enumerate(set_a):
+		if item in set_b or item[::-1] in set_b:
+			v.append(True)
+		else:
+			v.append(False)
+	return all(v)
 
 class TestPipelineBuilder(unittest.TestCase):
 
@@ -474,6 +484,61 @@ class TestPipelineBuilder(unittest.TestCase):
 
 		with self.assertRaises(MultipleFileFoundException):
 			p._PipelineBuilder__check_and_create_samples()
+
+
+
+	def test_creates_contrasts_correctly_with_no_contrast_file_given(self):
+
+		#make some samples:
+		all_samples = [Sample('A', 'X'), Sample('B', 'Y'), Sample('C', 'Z')]
+		p = PipelineBuilder('')
+		mock_pipeline_params = Params()
+		mock_pipeline_params.add(skip_analysis = False)
+		mock_pipeline_params.add(contrast_file = None)
+		p.builder_params = mock_pipeline_params
+		p.all_samples = all_samples
+
+		p._PipelineBuilder__check_contrast_file()
+		expected_result = set([('X','Y'),('X','Z'),('Y','Z')])
+		self.assertTrue(set_of_tuples_is_equivalent(p.contrasts, expected_result))
+
+	@mock.patch('utils.util_methods.parse_annotation_file')
+	def test_creates_contrasts_correctly_with_specified_contrast_file(self, mock_parse):
+
+		#make some samples:
+		all_samples = [Sample('A', 'X'), Sample('B', 'Y'), Sample('C', 'Z')]
+		p = PipelineBuilder('')
+		mock_pipeline_params = Params()
+		mock_pipeline_params.add(skip_analysis = False)
+		mock_pipeline_params.add(contrast_file = 'contrast.txt')
+		p.builder_params = mock_pipeline_params
+		p.all_samples = all_samples
+
+		mock_parse.return_value = set([('X','Y'),('X','Z'),('Y','Z')]) 
+
+		p._PipelineBuilder__check_contrast_file()
+		expected_result = set([('Y','X'),('X','Z'),('Y','Z')])
+		self.assertTrue(set_of_tuples_is_equivalent(p.contrasts, expected_result))
+
+	@mock.patch('utils.util_methods.parse_annotation_file')
+	def test_raises_exception_if_non_sensible_contrast_specified(self, mock_parse):
+
+		#make some samples:
+		all_samples = [Sample('A', 'X'), Sample('B', 'Y'), Sample('C', 'Z')]
+		p = PipelineBuilder('')
+		mock_pipeline_params = Params()
+		mock_pipeline_params.add(skip_analysis = False)
+		mock_pipeline_params.add(contrast_file = 'contrast.txt')
+		p.builder_params = mock_pipeline_params
+		p.all_samples = all_samples
+
+		# note the specification of a contrast of Y against A.  However, we have no samples from condition A.
+		mock_parse.return_value = set([('X','Y'),('X','Z'),('Y','A')]) 
+
+		with self.assertRaises(ContrastSpecificationException):
+			p._PipelineBuilder__check_contrast_file()
+
+		
 
 
 

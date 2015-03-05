@@ -8,7 +8,6 @@ class Sample(object):
 		self.read_1_fastq = read_1_fastq
 		self.read_2_fastq = read_2_fastq
 		self.bamfile = bamfile
-		logging.info(self) # calls __str__
 
 
 	def __str__(self):
