@@ -6,7 +6,6 @@ from printers import pretty_print
 import datetime
 import logging
 import os
-import os_utils
 import glob
 from pipeline import Pipeline
 from component import Component
@@ -132,8 +131,9 @@ class PipelineBuilder(object):
 		logging.info(name_and_condition_pairings)
 
 		for sample_name, condition in name_and_condition_pairings:
-				logging.info('Checking sample %s' % sample_name)
-			if not self.builder_params.get('skip_align'): # if aligning
+			logging.info('Checking sample %s' % sample_name)
+			# if aligning
+			if not self.builder_params.get('skip_align'):
 				directory_name = self.builder_params.get('sample_dir_prefix') + sample_name
 				expected_directory = os.path.join(self.builder_params.get('project_directory'), directory_name)
 				if os.path.isdir(expected_directory):
@@ -165,9 +165,9 @@ class PipelineBuilder(object):
 					logging.error('%s was not, in fact, a directory or the name scheme was incorrect.' % expected_directory)
 					raise ProjectStructureException('The sample directory %s does not exist' % expected_directory)
 			else: # if skipping alignment:
-				
-				# TODO:
-				util_methods.walk(...) 
+				search_pattern = sample_name + '.*?' + self.builder_params.get('target_bam')
+				bam_file = util_methods.find_file(self.builder_params.get('project_directory'), search_pattern)
+				self.all_samples.append(Sample(sample_name, condition, bamfile = bam_file))
 		
 
 
@@ -272,7 +272,7 @@ class PipelineBuilder(object):
 
 
 	def __create_output_dir(self, output_dir):
-		os_utils.create_directory(output_dir)
+		util_methods.create_directory(output_dir)
 
 
 	def __create_logger(self, log_dir):

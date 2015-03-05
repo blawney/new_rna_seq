@@ -21,11 +21,22 @@ def locate_config(directory, prefix=''):
 		raise ConfigFileNotFoundException("Could not locate any configuration files.")
 
 
-def walk(root_dir, pattern):
+def find_file(root_dir, pattern):
 	matching_files = []
 	for root, dirs, files in os.walk(root_dir):
 		for f in files:
-			pass	
+			m = re.match(pattern, f)
+			if m:
+				filename = m.group()
+				filepath = os.path.join(root, f)
+				matching_files.append(filepath)
+	if len(matching_files) == 1:
+		return matching_files[0]
+	elif len(matching_files) == 0:
+		raise MissingFileException('Could not locate a file that matched the regex %s underneath %s' % (pattern, root_dir))
+	elif len(matching_files) > 1:
+		raise MultipleFileFoundException('Found multiple files matchin the regex %s underneath %s' % (pattern, root_dir))
+
 
 def check_for_component_directory(directory):
 	if not os.path.isdir(directory):
@@ -68,5 +79,15 @@ def parse_annotation_file(annotation_filepath):
 		logging.error("An exception occurred while attempting to parse the annotation file at %s", annotation_filepath)
 		raise AnnotationFileParseException(ex.message)		
 
-
+def create_directory(path):
+	"""
+	Creates a directory.  If it cannot (due to write permissions, etc).  Issues a message and kills the pipeline
+	"""
+	# to avoid overwriting data in an existing directory, only work in a new directory 
+	if os.path.isdir(path):
+		raise CannotMakeOutputDirectoryException("The path ("+ path +") is an existing directory. To avoid overwriting data, please supply a path to a new directory")
+	elif os.access(os.path.dirname(path), os.W_OK):
+		os.makedirs(path, 0774)
+	else:
+		raise CannotMakeOutputDirectoryException("Could not create the output directory at: (" + str(path) + "). Check write-permissions, etc.")
 		

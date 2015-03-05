@@ -40,5 +40,3 @@ class AnnotationFileParseException(Exception):
 
 class ProjectStructureException(Exception):
 	pass
-
-class 
