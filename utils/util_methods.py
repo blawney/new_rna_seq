@@ -6,6 +6,7 @@ import re
 
 CONFIG_SUFFIX = "cfg"
 
+
 def locate_config(directory, prefix=''):
 	# search in the directory for a proper config file:
 	cfg_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(CONFIG_SUFFIX) and f.startswith(prefix)]
@@ -19,6 +20,7 @@ def locate_config(directory, prefix=''):
 	else:
 		logging.error("Could not locate any config files (*.cfg) in %s.", directory)
 		raise ConfigFileNotFoundException("Could not locate any configuration files.")
+
 
 
 def find_file(root_dir, pattern):
@@ -38,14 +40,17 @@ def find_file(root_dir, pattern):
 		raise MultipleFileFoundException('Found multiple files matchin the regex %s underneath %s' % (pattern, root_dir))
 
 
+
 def check_for_component_directory(directory):
 	if not os.path.isdir(directory):
 		raise MissingComponentDirectoryException('Missing a necessary pipeline component: ' + str(directory))
 
 
+
 def check_for_file(filepath):
 	if not os.path.isfile(filepath):
 		raise MissingFileException('Missing a file: ' + str(filepath))
+
 
 
 def component_structure_valid(path, main_script, entry_method):
@@ -78,6 +83,8 @@ def parse_annotation_file(annotation_filepath):
 	except Exception as ex:
 		logging.error("An exception occurred while attempting to parse the annotation file at %s", annotation_filepath)
 		raise AnnotationFileParseException(ex.message)		
+
+
 
 def create_directory(path):
 	"""

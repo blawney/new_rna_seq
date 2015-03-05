@@ -49,7 +49,7 @@ class PipelineBuilder(object):
 		self.__check_contrast_file()
 		self.__get_available_components()
 
-		self.all_samples = [] # 
+		self.all_samples = [] 
 		self.__check_and_create_samples()
 
 		logging.info("After reading pipeline configuration: ")
@@ -125,8 +125,9 @@ class PipelineBuilder(object):
 		2) if alignment is skipped (i.e. have BAM files), the necessary BAM files are there
 		"""
 		logging.info('Checking sample annotation file against project directory.')
+
 		# the name of the sample and the condition, as a list of tuples:
-		name_and_condition_pairings = util_methods.parse_annotation_file(self.params.get('sample_annotation_file'))
+		name_and_condition_pairings = util_methods.parse_annotation_file(self.builder_params.get('sample_annotation_file'))
 		logging.info('The following sample to group pairings were found in the sample annotation file: ')
 		logging.info(name_and_condition_pairings)
 
