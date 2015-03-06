@@ -1,2 +1,2 @@
-def run():
-	pass
+def run(project):
+	print 'in rna-seqc'

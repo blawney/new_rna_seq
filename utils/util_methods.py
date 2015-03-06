@@ -85,7 +85,7 @@ def parse_annotation_file(annotation_filepath):
 		return set(pairings)
 	except Exception as ex:
 		logging.error("An exception occurred while attempting to parse the annotation file at %s", annotation_filepath)
-		raise AnnotationFileParseException(ex.message)		
+		raise AnnotationFileParseException(ex)		
 
 
 

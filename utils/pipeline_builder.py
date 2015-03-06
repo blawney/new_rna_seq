@@ -60,9 +60,6 @@ class PipelineBuilder(object):
 
 		self.determine_components()
 
-		logging.info("After reading pipeline configuration: ")
-		logging.info(self.builder_params)
-
 
 	def build(self):
 		pipeline = Pipeline()
@@ -74,6 +71,8 @@ class PipelineBuilder(object):
 		project.add_contrasts(self.contrasts)
 
 		pipeline.add_project(project)
+
+		pipeline.print_summary()
 
 		return pipeline
 

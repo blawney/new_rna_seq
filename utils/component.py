@@ -1,4 +1,5 @@
-import sys
+import os
+import imp
 
 class Component(object):
 	def __init__(self, name, directory):
@@ -8,8 +9,7 @@ class Component(object):
 
 
 	def __str__(self):
-		s = 'Component: \n'
-		s += 'name: ' + str(self.name) + '\n'
+		s = 'Component name: ' + str(self.name) + '\n'
 		s += 'location: '+str(self.location)
 		return s
 
@@ -21,16 +21,19 @@ class Component(object):
 	def run(self):
 
 		# add the directory for the module, so it is in the search path
-		sys.path.append(self.location)
+		#sys.path.append(self.location)
 
 		# the name of the script (minus the .py) that is used to run this component
-		module = self.project_params.get('entry_module')
+		module_name = self.project.parameters.get('entry_module')
 
 		# the method name that launches the component
-		method_name = self.project_params.get('entry_method')
+		method_name = self.project.parameters.get('entry_method')
 
 		# import the method from module
-		run_method = getattr(__import__(module, fromlist=[method_name]), method_name)
+		fileobj, filename, description = imp.find_module(module_name, [self.location])
+		module = imp.load_module(module_name, fileobj, filename, description)
+		run_method = getattr(module, method_name)
 
-		run_method()
+		# run the component:
+		run_method(self.project)
 		

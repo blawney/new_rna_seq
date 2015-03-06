@@ -22,39 +22,21 @@ class Pipeline(object):
 		self.project = project
 
 
-	def summary(self):
-		print '**************************'
-		print self.project.parameters
-		print '**************************'
-		for comp in self.components:
-			print comp
+	def print_summary(self):
+		logging.info('Configuration parameters:\n%s' % self.project.parameters)
+		logging.info('Pipeline components (in order to be executed):\n%s' % '\n'.join(str(c) for c in self.components))
+		logging.info('Samples:\n%s' % '\n'.join(str(s) for s in self.project.samples))
+		if not self.project.parameters.get('skip_analysis'):
+			logging.info('Contrasts:\n%s' % '\n'.join(map( lambda x: str(x[0])+ ' versus ' + str(x[1]) ,self.project.contrasts)))
+		else:
+			logging.info('No contrasts since skipping downstream analysis.')
 
-		print '**************************'
-		for s in self.project.samples:
-			print s
-		print '**************************'
-		print '**************************'
-		print self.project.contrasts
-		print '**************************'
 
 	def run(self):
 
-		if not self.project.parameters.get('skip_align'):			
-
-			#call align setup
-			self.__align_samples()
-
-
-	def __align_samples(self):
-		print 'in align...'
-		"""
-		# create a Component for the aligner
-		aligner_name = self.project.parameters.get('aligner')
-		aligner_dir = os.path.join(self.project.parameters.get('aligners_dir'), aligner_name)
-		aligner = Component(aligner_name, aligner_dir, self.params, self.sample_list)
-		aligner.run()
-		"""
-
+		for component in self.components:
+			component.add_project_data(self.project)
+			component.run()
 
 
 

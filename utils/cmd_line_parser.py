@@ -1,4 +1,12 @@
 import argparse
+import os
+
+# this attaches an action (if specified with 'action=MakeAbsolutePathAction')
+# relative paths are converted to absolute paths for strictness
+class MakeAbsolutePathAction(argparse.Action):
+	def __call__(self, parser, namespace, values, option_string=None):
+		setattr(namespace, self.dest, os.path.abspath(values))
+
 
 def setup_args():
 	"""
@@ -10,6 +18,7 @@ def setup_args():
 	parser.add_argument("-d", "--dir", 
 				required=True, 
 				help="Full path to the project directory.",
+				action=MakeAbsolutePathAction,
 				dest="project_directory")
 
 	parser.add_argument("-g", "--genome", 
@@ -20,11 +29,13 @@ def setup_args():
 	parser.add_argument("-o", "--output",
 				required=True,
 				help="Full path to the output directory.",
+				action=MakeAbsolutePathAction,
 				dest="output_location")
 
 	parser.add_argument("-s", "--samples",
 				required=True,
-				help="The full path to a sample annotation file (for formatting, see documentation).",
+				help="The path to a sample annotation file (for formatting, see documentation).",
+				action=MakeAbsolutePathAction,
 				dest="sample_annotation_file")
 
 	parser.add_argument("-a", "--aligner",
@@ -34,13 +45,15 @@ def setup_args():
 
 	parser.add_argument("-c", "--contrasts",
 				required=False,
-				help="The name of the contrast annotation file (for formatting, see documentation).  Assumed to be located in the project directory.",
+				help="The path to a contrast annotation file (for formatting, see documentation).",
+				action=MakeAbsolutePathAction,
 				dest="contrast_file")
 
 	parser.add_argument("-config",
 				required=False,
 				default=None,
-				help="Full path to a custom project configuration file.",
+				help="Path to a custom project configuration file.",
+				action=MakeAbsolutePathAction,
 				dest="project_configuration_file")
 
 	parser.add_argument("-skip_align",
@@ -66,7 +79,7 @@ def setup_args():
 
 	parser.add_argument("-t","--target",
 				required=False,
-				default=None,
+				default='bam',
 				help="A tag (string) for selecting a particular set of (existing) BAM files to use with analysis.",
 				dest="target_bam")
 

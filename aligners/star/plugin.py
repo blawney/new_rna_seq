@@ -1,2 +1,3 @@
-def run():
-	print 'in main.py run()'
+def run(project):
+	print 'in star align:'
+	print project.parameters.get('output_location')
