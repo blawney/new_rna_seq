@@ -26,6 +26,7 @@ def create_dict(parser, selected_section):
 
 def read_config(config_filepath, section = ''):
 	try:
+		logging.info("Attempting to parse configuration file at %s" % config_filepath)
 		with open(config_filepath, 'r') as cfg_fileobj:
 			return parse(cfg_fileobj, section)
 	except IOError:
@@ -39,11 +40,9 @@ def parse(config_fileobj, section):
 	"""
 	Takes in a file-like object
 	"""
-	logging.info("Attempting to parse configuration file")
 	parser = SafeConfigParser()
 	parser.readfp(config_fileobj)
 	cfg = create_dict(parser, section)
-	logging.info("Completed parsing.")
 	logging.info(pretty_print(cfg))
 	return cfg
 	

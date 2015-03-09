@@ -249,8 +249,6 @@ class PipelineBuilder(object):
 		If aligner was specified in input args, check that it is valid and fill in the appropriate parameter
 		If aligner arg not correct, throw an exception
 
-		After determining that the aligner name was valid, then check whether the particular combination of genome+aligner is OK.
-		(e.g. some aligners may be valid, but not yet configured for the genome of interest)
 		"""
 		self.__get_aligner_info()
 		available_aligners = self.builder_params.get('available_aligners')
@@ -265,18 +263,23 @@ class PipelineBuilder(object):
 			logging.error('Available aligners: %s', available_aligners)
 			raise IncorrectAlignerException("Unavailable aligner specified.  Check log and correct as necessary.")
 		
-		# now check that the combination of genome and aligner is ok:
+		# now check that this aligner has a config file.  Does not check that the aligner+genome is OK.  
+		# That is done when the aligner is invoked.
 		chosen_genome = self.builder_params.get('genome')
 		aligner = self.builder_params.get('aligner')
 		aligner_specific_dir = os.path.join( self.builder_params.get('aligners_dir'), aligner)
-		logging.info('Searching for aligner-specific configuration file in %s', aligner_specific_dir)
-		util_methods.locate_config(aligner_specific_dir, chosen_genome)
+		logging.info('Searching (but not parsing) for aligner configuration file in: %s', aligner_specific_dir)
+		util_methods.locate_config(aligner_specific_dir)
 
 		# create a component for the aligner:
 		self.all_components.append(Component(aligner, aligner_specific_dir))
 
 
 	def __get_aligner_info(self):
+		"""
+		Finds and parses the aligner configuration file-- this only indicates which aligners
+		are available and which are default.  Nothing specific to a particular aligner.
+		"""
 		aligner_cfg = util_methods.locate_config(self.builder_params.get('aligners_dir'))
 		self.builder_params.add(cfg_parser.read_config(aligner_cfg))	
 
