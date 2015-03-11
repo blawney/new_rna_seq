@@ -20,9 +20,6 @@ class Component(object):
 
 	def run(self):
 
-		# add the directory for the module, so it is in the search path
-		#sys.path.append(self.location)
-
 		# the name of the script (minus the .py) that is used to run this component
 		module_name = self.project.parameters.get('entry_module')
 

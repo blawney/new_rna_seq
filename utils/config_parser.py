@@ -10,7 +10,8 @@ def create_dict(parser, selected_section):
 	"""
 	Creates and returns a dictionary of the key-value parameters in a configuration file
 	"""
-
+	if selected_section.lower() == 'default':
+		return parser.defaults()
 	if selected_section != '' and selected_section not in parser.sections():
 		raise MissingConfigFileSectionException('Config file did not contain %s section', selected_section)
 	else:

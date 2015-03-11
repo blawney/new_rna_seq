@@ -90,7 +90,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		p.all_components = []
 		p._PipelineBuilder__get_aligner_info = mock.Mock()
 
-		mock_os.listdir.return_value = ['hg19.cfg', 'mm10.cfg']
+		mock_os.listdir.return_value = ['star.cfg']
 		
 		p._PipelineBuilder__check_aligner_valid()
 		self.assertEqual(p.builder_params.get('aligner'), default_aligner)
@@ -115,7 +115,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		p.builder_params = mock_pipeline_params
 		p._PipelineBuilder__get_aligner_info = mock.Mock()
 
-		mock_os.listdir.return_value = ['hg19.cfg', 'mm10.cfg']
+		mock_os.listdir.return_value = []
 		
 		with self.assertRaises(ConfigFileNotFoundException):
 			p._PipelineBuilder__check_aligner_valid()
