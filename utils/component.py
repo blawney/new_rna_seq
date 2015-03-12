@@ -1,5 +1,6 @@
 import os
 import imp
+import logging
 
 class Component(object):
 	def __init__(self, name, directory):
@@ -27,10 +28,21 @@ class Component(object):
 		method_name = self.project.parameters.get('entry_method')
 
 		# import the method from module
-		fileobj, filename, description = imp.find_module(module_name, [self.location])
-		module = imp.load_module(module_name, fileobj, filename, description)
-		run_method = getattr(module, method_name)
+		try:
+			logging.info('Attempting to locate and load module for component: %s in %s ' % (self.name, self.location))
+			fileobj, filename, description = imp.find_module(module_name, [self.location])
+			module = imp.load_module(module_name, fileobj, filename, description)
+			
+			run_method = getattr(module, method_name)
 
-		# run the component:
-		run_method(self.project)
+			# run the component:
+			run_method(self.project)
+		except ImportError as ex:
+			logging.error('ImportError: Could not load the module at %s ' % filename)
+			raise ex
+		except Exception as ex:
+			logging.error('''Some other exception was thrown while loading and running module.  If the exception message is vague, 
+					 try importing this module directly in the interpreter-- could be due to simple syntax error''')
+			raise ex
+ 
 		
