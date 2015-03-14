@@ -4,6 +4,8 @@ import os
 import imp
 import re
 import subprocess
+from time import sleep
+
 
 # define a custom, descriptive exception:
 class IncorrectParameterSubstitutionException(Exception):
@@ -11,6 +13,10 @@ class IncorrectParameterSubstitutionException(Exception):
 
 # if anything goes wrong during the alignment process:
 class AlignmentScriptErrorException(Exception):
+	pass
+
+# in case the script never gets a chance to run due to memory-restricted 'lockouts'
+class AlignmentTimeoutException(Exception):
 	pass
 
 
@@ -57,20 +63,58 @@ def run(project):
 			outfile.write(align_script_string)
 		alignment_script_paths.append(align_script_path)
 
-	execute_alignments(alignment_script_paths)
+	execute_alignments(alignment_script_paths, project.parameters)
 
 
+def assert_memory_reasonable(min_mem_necessary):
+	"""
+	This method does a dirty check on the system memory to see that there is a reasonable amount of RAM avaialable
+	"""
+	try:
+		# the memory is passed in GB- we need to compare to MB, so multiply by 1000:
+		min_mem_necessary = float(min_mem_necessary)* 1000
+		call = 'free -m -o'
+		output = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE)
+		for line in output.stdout:
+			if line.startswith('Mem:'):
+				text,total,used,free,shared,buffers,cached = line.strip().split()
+				break
+	
+		available = int(free) + int(cached)
+		if available > min_mem_necessary:
+			return True
+		else:
+			logging.warning('Via parsing "free" output, it seems there is less than %s MB of RAM available.' % min_mem)
+			return False
 
-def execute_alignments(alignment_script_paths):
+	except Exception as ex:
+		logging.error('Some exception occurred while inspecting the system memory for sufficient capacity.')
+		raise ex
+
+
+def execute_alignments(alignment_script_paths, params):
 	"""
 	This method starts and monitors the alignment subprocesses.  
 	Since STAR is RAM-intensive, jobs are run sequentially instead of in parallel.
 	"""
+
 	for script_path in alignment_script_paths:
+		not_executed_flag = True 
+		attempt_counter = 0
 		os.chmod(script_path, 0774)
 		try:
-			logging.info('Executing alignment script at: %s' % script_path)
-			#subprocess.check_call(script_path, shell = True)
+			while not_executed_flag: 
+				if assert_memory_reasonable(params.get('min_memory')):
+					not_executed_flag = False
+					logging.info('Executing alignment script at: %s' % script_path)
+					subprocess.check_call(script_path, shell = True)				
+				elif attempt_counter <= params.get('wait_cycles'):
+					attempt_counter += 1
+					sleep(60 * params.get('wait_length'))
+				else:
+					logging.warning('After waiting for %s periods of %s minutes each, still could not get enough reasonable memory to run STAR.')
+					raise AlignmentTimeoutException('Timeout on running the script at %s' % script_path)
+							
 		except subprocess.CalledProcessError:
 			logging.error('The STAR alignment process had non-zero exit status. Check the log for details.')
 			raise AlignmentScriptErrorException('Error during STAR alignment')
@@ -87,8 +131,9 @@ def get_template(script_name):
 	try:
 		logging.info('Attempting to read template script file at %s' % template_path)
 		return open(template_path).read()
-	except:
-		logging.error('There was an issue reading the template script.')
+	except Exception as ex:
+		logging.error('There was an issue reading the template script at %s' % template_path)
+		raise ex
 
 
 def inject_parameter(flag, parameter, template):
@@ -97,7 +142,7 @@ def inject_parameter(flag, parameter, template):
 	"""
 	# check that the flag is in the template string:
 	if len(re.findall(flag, template)) > 0:
-		return re.sub(flag, parameter, template)
+		return re.sub(flag, str(parameter), template)
 	else:
 		logging.error('Could not locate the flag "%s" in the template script.  ' % flag)
 		raise IncorrectParameterSubstitutionException('Could not locate the flag "%s" in the template script.  ' % flag)
@@ -157,6 +202,10 @@ def load_remote_module(module_name, location):
 	Loads and returns the module given by 'module_name' that resides in the given location
 	"""
 	sys.path.append(location)
-	fileobj, filename, description = imp.find_module(module_name, [location])
-	module = imp.load_module(module_name, fileobj, filename, description)
-	return module
+	try:
+		fileobj, filename, description = imp.find_module(module_name, [location])
+		module = imp.load_module(module_name, fileobj, filename, description)
+		return module
+	except ImportError as ex:
+		logging.error('Could not import module %s at location %s' % (module_name, location))
+		raise ex
