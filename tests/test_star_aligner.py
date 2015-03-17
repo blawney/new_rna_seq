@@ -119,6 +119,53 @@ class TestStarAligner(unittest.TestCase, ComponentTester):
 		self.module.subprocess.check_call.assert_has_calls(calls)
 
 
+	def test_alignment_call_waits_properly(self):
+		import subprocess
+		self.module.subprocess = mock.Mock()
+		self.module.os.chmod = mock.Mock()
+		self.module.assert_memory_reasonable = mock.Mock()
+		self.module.sleep = mock.Mock()
+		self.module.assert_memory_reasonable.side_effect = [False, False, True, True]
+		p = Params()
+		p.add(wait_length = '10')
+		p.add(wait_cycles = '50')
+		p.add(min_memory = '40')
+		paths = ['/path/to/a.sh', '/path/to/b.sh']
+			
+		self.module.execute_alignments(paths, p)
+
+		# assert that the script was eventually called.
+		calls = [mock.call('/path/to/a.sh', shell=True),
+			mock.call('/path/to/b.sh', shell=True)]
+		self.module.subprocess.check_call.assert_has_calls(calls)
+
+		# assert that it had to wait twice (via calling sleep() twice)
+		calls = [mock.call(600), mock.call(600)]
+		self.module.sleep.assert_has_calls(calls)
+	
+
+	def test_alignment_call_timesout_properly(self):
+		import subprocess
+		self.module.subprocess = mock.Mock()
+		self.module.os.chmod = mock.Mock()
+		self.module.assert_memory_reasonable = mock.Mock()
+		self.module.sleep = mock.Mock()
+		self.module.assert_memory_reasonable.side_effect = [False, False, False, False]
+		p = Params()
+		p.add(wait_length = '10')
+		p.add(wait_cycles = '3')
+		p.add(min_memory = '40')
+		paths = ['/path/to/a.sh']
+			
+		with self.assertRaises(self.module.AlignmentTimeoutException):
+			self.module.execute_alignments(paths, p)
+
+
+		# assert that it had to wait the proper amount of times (via calling sleep())
+		calls = [mock.call(600), mock.call(600), mock.call(600)]
+		self.module.sleep.assert_has_calls(calls)
+	
+
 if __name__ == "__main__":
 	unittest.main()
 

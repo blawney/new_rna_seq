@@ -84,9 +84,11 @@ def assert_memory_reasonable(min_mem_necessary):
 		if available > min_mem_necessary:
 			return True
 		else:
-			logging.warning('Via parsing "free" output, it seems there is less than %s MB of RAM available.' % min_mem)
+			logging.info('Via parsing "free" output, it seems there is less than %s MB of RAM available.' % min_mem)
 			return False
-
+	except ValueError:
+		logging.error('Could not convert the "memory" argument parsed from the STAR config file as a float.')
+		raise ex
 	except Exception as ex:
 		logging.error('Some exception occurred while inspecting the system memory for sufficient capacity.')
 		raise ex
@@ -99,18 +101,19 @@ def execute_alignments(alignment_script_paths, params):
 	"""
 
 	for script_path in alignment_script_paths:
-		not_executed_flag = True 
 		attempt_counter = 0
 		os.chmod(script_path, 0774)
 		try:
-			while not_executed_flag: 
+			while True: 
 				if assert_memory_reasonable(params.get('min_memory')):
-					not_executed_flag = False
 					logging.info('Executing alignment script at: %s' % script_path)
-					subprocess.check_call(script_path, shell = True)				
-				elif attempt_counter <= params.get('wait_cycles'):
+					subprocess.check_call(script_path, shell = True)
+					break				
+				elif attempt_counter < int(params.get('wait_cycles')):
+					logging.info('Since memory was not adequate to run STAR, wait for %s minutes' % params.get('wait_length'))
+					logging.info('This is attempt number %s on running the script at %s' % (attempt_counter, script_path))
 					attempt_counter += 1
-					sleep(60 * params.get('wait_length'))
+					sleep(60 * float(params.get('wait_length')))
 				else:
 					logging.warning('After waiting for %s periods of %s minutes each, still could not get enough reasonable memory to run STAR.')
 					raise AlignmentTimeoutException('Timeout on running the script at %s' % script_path)
@@ -118,6 +121,10 @@ def execute_alignments(alignment_script_paths, params):
 		except subprocess.CalledProcessError:
 			logging.error('The STAR alignment process had non-zero exit status. Check the log for details.')
 			raise AlignmentScriptErrorException('Error during STAR alignment')
+		except ValueError as ex:
+			logging.error('Could not parse one of the arguments from the configuration file as the proper number:')
+			logging.error(ex.message)
+			raise ex 
 
 
 
