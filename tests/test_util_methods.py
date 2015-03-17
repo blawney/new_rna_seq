@@ -220,7 +220,23 @@ class UtilMethodsTest(unittest.TestCase):
 
 
 
-	
+	def test_case_insensitive_regex_generator_for_character(self):
+		c = 'a'
+		expected_result = '[aA]'
+		result = either_case(c)
+		self.assertEqual(expected_result, result)
+
+	def test_case_insensitive_regex_generator_for_number(self):
+		c = '1'
+		expected_result = '1'
+		result = either_case(c)
+		self.assertEqual(expected_result, result)
+
+	def test_case_insensitive_rstrip(self):
+		s = 'something.BaM'
+		expected_result = 'something'
+		result = case_insensitive_rstrip(s, '.bam')
+		self.assertEqual(expected_result, result)
 
 
 if __name__ == "__main__":
