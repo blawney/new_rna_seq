@@ -3,6 +3,7 @@ import os
 from custom_exceptions import *
 import imp
 import re
+import glob
 
 CONFIG_SUFFIX = "cfg"
 
@@ -105,3 +106,14 @@ def create_directory(path):
 	else:
 		raise CannotMakeOutputDirectoryException("Could not create the output directory at: (" + str(path) + "). Check write-permissions, etc.")
 		
+
+
+def case_insensitive_glob(pattern):
+
+	def either_case(c):
+		return '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
+
+	return glob.glob(''.join(map(either_case, pattern)))
+
+
+

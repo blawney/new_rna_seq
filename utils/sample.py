@@ -7,7 +7,7 @@ class Sample(object):
 		self.condition = condition
 		self.read_1_fastq = read_1_fastq
 		self.read_2_fastq = read_2_fastq
-		self.bamfile = bamfile
+		self.bamfiles = [bamfile] if bamfile else []
 		self.flowcell_id = 'DEFAULT'
 		self.lane = '0'
 		self.index = 'DEFAULT_INDEX'

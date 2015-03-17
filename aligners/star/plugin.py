@@ -5,6 +5,7 @@ import imp
 import re
 import subprocess
 from time import sleep
+import glob
 
 
 # define a custom, descriptive exception:
@@ -17,6 +18,10 @@ class AlignmentScriptErrorException(Exception):
 
 # in case the script never gets a chance to run due to memory-restricted 'lockouts'
 class AlignmentTimeoutException(Exception):
+	pass
+
+# in case BAM files were not found after alignment
+class BAMFileNotFoundException(Exception):
 	pass
 
 
@@ -64,6 +69,22 @@ def run(project):
 		alignment_script_paths.append(align_script_path)
 
 	execute_alignments(alignment_script_paths, project.parameters)
+	register_bam_files(project, util_methods.case_insensitive_glob)
+
+
+
+def register_bam_files(project, glob_method):
+	"""
+	This finds all the bam files created by the alignment step and adds them to the respective Sample objects
+	"""
+	for sample in project.samples:
+		bam_files = glob_method(os.path.join(sample.alignment_dir, '*bam'))
+		if len(bam_files) > 0:
+			sample.bamfiles += bam_files
+		else:
+			logging.info('Could not find any BAM files in %s. ' % sample.alignment_dir)
+			raise BAMFileNotFoundException
+
 
 
 def assert_memory_reasonable(min_mem_necessary):
