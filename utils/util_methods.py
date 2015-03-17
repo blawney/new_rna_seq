@@ -108,12 +108,16 @@ def create_directory(path):
 		
 
 
+def either_case(c):
+	return '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
+
+
 def case_insensitive_glob(pattern):
-
-	def either_case(c):
-		return '[%s%s]' % (c.lower(), c.upper()) if c.isalpha() else c
-
 	return glob.glob(''.join(map(either_case, pattern)))
+
+
+def case_insensitive_rstrip(orig_string, suffix):
+	return orig_string.rstrip(''.join(map(either_case, suffix)))
 
 
 

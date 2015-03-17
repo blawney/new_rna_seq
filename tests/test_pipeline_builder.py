@@ -213,7 +213,7 @@ class TestPipelineBuilder(unittest.TestCase):
 			self.assertTrue(s.sample_name == pairings[i][0])
 			self.assertTrue(s.read_1_fastq == glob_return[i*2][0])
 			self.assertTrue(s.read_2_fastq == None)
-			self.assertTrue(s.bamfile == None)
+			self.assertTrue(s.bamfiles == [])
 
 
 
@@ -257,7 +257,7 @@ class TestPipelineBuilder(unittest.TestCase):
 			self.assertTrue(s.sample_name == pairings[i][0])
 			self.assertTrue(s.read_1_fastq == glob_return[i*2][0])
 			self.assertTrue(s.read_2_fastq == glob_return[i*2+1][0])
-			self.assertTrue(s.bamfile == None)
+			self.assertTrue(s.bamfiles == [])
 
 
 	@mock.patch('utils.util_methods.parse_annotation_file')
@@ -351,38 +351,6 @@ class TestPipelineBuilder(unittest.TestCase):
 	def test_samples_created_correctly_for_skipping_align(self, mock_find_file, mock_parse_method):
 		"""
 		Tests the case where we want to skip alignment and the target suffix is given for the BAM files
-		"""
-		# list of tuples linking the sample names and conditions:
-		pairings = [('A', 'X'),('B', 'X'),('C', 'Y')]
-		mock_parse_method.return_value = pairings
-		
-		# mock the find_file() method returning some paths to bam files:
-		bamfiles = ['A.sort.bam','B.sort.bam','C.sort.bam']
-		mock_find_file.side_effect = bamfiles
-
-		# setup all the necessary parameters that the method will look at:
-		p = PipelineBuilder('')
-		p.all_samples = []
-		mock_pipeline_params = Params()
-		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
-		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
-		mock_pipeline_params.add(skip_align = True)
-		mock_pipeline_params.add(target_bam = 'sort.bam')
-		p.builder_params = mock_pipeline_params
-
-		p._PipelineBuilder__check_and_create_samples()
-		for i,s in enumerate(p.all_samples):
-			self.assertTrue(s.sample_name == pairings[i][0])
-			self.assertTrue(s.read_1_fastq == None)
-			self.assertTrue(s.read_2_fastq == None)
-			self.assertTrue(s.bamfile == bamfiles[i] )
-
-
-	@mock.patch('utils.util_methods.parse_annotation_file')
-	@mock.patch('utils.util_methods.find_file')
-	def test_samples_created_correctly_for_skipping_align(self, mock_find_file, mock_parse_method):
-		"""
-		Tests the case where we want to skip alignment and the target suffix is given for the BAM files
 		In this test, the call to the find_file method is mocked out with a dummy return value
 		"""
 		# list of tuples linking the sample names and conditions:
@@ -408,7 +376,7 @@ class TestPipelineBuilder(unittest.TestCase):
 			self.assertTrue(s.sample_name == pairings[i][0])
 			self.assertTrue(s.read_1_fastq == None)
 			self.assertTrue(s.read_2_fastq == None)
-			self.assertTrue(s.bamfile == bamfiles[i] )
+			self.assertTrue(s.bamfiles == [bamfiles[i]] )
 
 
 	@mock.patch('utils.util_methods.parse_annotation_file')
@@ -447,7 +415,7 @@ class TestPipelineBuilder(unittest.TestCase):
 			self.assertTrue(s.sample_name == pairings[i][0])
 			self.assertTrue(s.read_1_fastq == None)
 			self.assertTrue(s.read_2_fastq == None)
-			self.assertTrue(s.bamfile == bamfiles[i] )
+			self.assertTrue(s.bamfiles == [bamfiles[i]] )
 
 
 
