@@ -19,5 +19,5 @@ class Sample(object):
 		s += 'Condition: ' + str(self.condition) + '\n'
 		s += 'Read 1 fastq: ' + str(self.read_1_fastq) + '\n'
 		s += 'Read 2 fastq: ' + str(self.read_2_fastq) + '\n'
-		s += 'BAM path: ' + str(self.bamfile) + '\n'
+		s += 'BAM path: ' + str(self.bamfiles) + '\n'
 		return s

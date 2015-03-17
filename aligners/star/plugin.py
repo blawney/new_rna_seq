@@ -105,7 +105,7 @@ def assert_memory_reasonable(min_mem_necessary):
 		if available > min_mem_necessary:
 			return True
 		else:
-			logging.info('Via parsing "free" output, it seems there is less than %s MB of RAM available.' % min_mem)
+			logging.info('Via parsing "free" output, it seems there is less than %s MB of RAM available.' % min_mem_necessary)
 			return False
 	except ValueError:
 		logging.error('Could not convert the "memory" argument parsed from the STAR config file as a float.')
@@ -132,7 +132,7 @@ def execute_alignments(alignment_script_paths, params):
 					break				
 				elif attempt_counter < int(params.get('wait_cycles')):
 					logging.info('Since memory was not adequate to run STAR, wait for %s minutes' % params.get('wait_length'))
-					logging.info('This is attempt number %s on running the script at %s' % (attempt_counter, script_path))
+					logging.info('This is attempt number %s on running the script at %s' % (attempt_counter + 1, script_path))
 					attempt_counter += 1
 					sleep(60 * float(params.get('wait_length')))
 				else:
