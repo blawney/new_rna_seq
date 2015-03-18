@@ -33,10 +33,13 @@ class Pipeline(object):
 
 
 	def run(self):
-
-		for component in self.components:
-			component.add_project_data(self.project)
-			component.run()
+		if self.project and len(self.project.samples) > 0:
+			for component in self.components:
+				component.add_project_data(self.project)
+				component.run()
+		else:
+			logging.error('Could not run the pipeline since no project was added, or there were zero samples detected.')
+			raise Exception('There was nothing to run.  Check the Samples were properly added to the project.')
 
 
 
