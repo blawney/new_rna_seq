@@ -4,15 +4,25 @@ import os
 import imp
 import subprocess
 
+sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
+
+import component_utils
+
+class CountfileQuantityException(Exception):
+	pass
+
 def run(project):
 	logging.info('Beginning featureCounts component of pipeline.')
 
+	# get the location of the utils directory:
+	utils_dir = project.parameters.get('utils_dir')
+
 	# load the parser and the util_methods modules:
-	config_parser = load_remote_module('config_parser', utils_dir)
-	util_methods = load_remote_module('util_methods', utils_dir)
+	config_parser = component_utils.load_remote_module('config_parser', utils_dir)
+	util_methods = component_utils.load_remote_module('util_methods', utils_dir)
 
 	# parse this module's config file
-	parse_config_file(project, util_methods, config_parser)
+	component_utils.parse_config_file(project, util_methods, config_parser, os.path.dirname(os.path.realpath(__file__)))
 
 	# create a full path to the output directory for the featureCount's output and reset the parameter in the project parameters:
 	output_dir = os.path.join(project.parameters.get('output_location'), project.parameters.get('feature_counts_output_dir'))
@@ -23,6 +33,40 @@ def run(project):
 
 	# start the counting:
 	execute_counting(project, util_methods)
+
+	create_count_matrices(project, util_methods)
+
+
+
+def create_count_matrices(project, util_methods):
+	file_groups = get_countfile_groupings(project, util_methods.case_insensitive_glob)
+	# TODO: implement the actual concatenation of the count files
+
+
+
+def get_countfile_groupings(project, case_insensitive_glob):
+	"""
+	This method aggregates all the countfiles generated from each 'type' of bam file and returns the full filepaths as a list of lists.  That is, we may have multiple bam files for each sample (e.g. primary alignments, deduplicated, etc).
+	We will be generating a countfile for each one of those.  When we assemble into a count matrix, we obviously group the files of a particular 'type' (e.g. those coming from deduplicated BAM files).
+	"""
+	# get handles (i.e. file suffixes) for all the different count files that were created and make wildcard patterns:
+	s = project.samples[0]
+	extensions = ['*' + countfile.lstrip(s.sample_name) for countfile in s.countfiles]
+
+	# create full paths by appending the location of the directory for featureCounts output:
+	paths = [os.path.join(project.parameters.get('feature_counts_output_dir'), p) for p in extensions]
+
+	# get the full groups of the countfiles
+	file_groups = map(case_insensitive_glob, paths)
+
+	# if there are missing files (e.g. a particular sample does not have a countfile that the other samples have), raise an error:
+	sample_count = len(project.samples)
+	for grouping in file_groups:
+		if len(grouping) != sample_count:
+			logging.error('There were %s samples in total.  However, the number of countfiles was not equal to this.' % sample_count)
+			logging.error(grouping)
+			raise CountfileQuantityException('The number of countfiles did not match the number of samples.  Check log.')
+	return file_groups
 
 
 def execute_counting(project, util_methods):
@@ -54,24 +98,3 @@ def execute_counting(project, util_methods):
 		sample.countfiles = countfiles
 
 
-def parse_config_file(project, util_methods, config_parser):
-	"""
-	Parses this component's configuration file and adds the constants to the project parameters.
-	"""
-	this_directory = os.path.dirname(os.path.realpath(__file__))
-	config_filepath = util_methods.locate_config(this_directory)
-	project.parameters.add(config_parser.read_config(config_filepath))
-
-
-def load_remote_module(module_name, location):
-	"""
-	Loads and returns the module given by 'module_name' that resides in the given location
-	"""
-	sys.path.append(location)
-	try:
-		fileobj, filename, description = imp.find_module(module_name, [location])
-		module = imp.load_module(module_name, fileobj, filename, description)
-		return module
-	except ImportError as ex:
-		logging.error('Could not import module %s at location %s' % (module_name, location))
-		raise ex
