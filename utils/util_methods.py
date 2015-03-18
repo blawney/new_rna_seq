@@ -99,7 +99,7 @@ def create_directory(path):
 		raise CannotMakeOutputDirectoryException("The path ("+ path +") is an existing directory. To avoid overwriting data, please supply a path to a new directory")
 	elif os.access(os.path.dirname(path), os.W_OK):
 		try:
-			os.makedirs(path, 0774)
+			os.makedirs(path, 0775)
 		except Exception as ex:
 			raise CannotMakeOutputDirectoryException("Could not create the output directory at: (" + str(path) + "). Check write-permissions, etc.")
 			
