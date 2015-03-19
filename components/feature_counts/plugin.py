@@ -34,13 +34,52 @@ def run(project):
 	# start the counting:
 	execute_counting(project, util_methods)
 
+	# create the final, unnormalized count matrices for each set of BAM files
 	create_count_matrices(project, util_methods)
 
 
 
 def create_count_matrices(project, util_methods):
+	"""
+	In general, there are a set of countfiles for each sample, corresponding to each bamfile.  This method takes the countfile of each 'type' across all samples
+	and creates a count matrix such that the genes are in rows and the samples are in columns.  In the end, each 'type' of bamfile (e.g. primary, deduped) will have
+	a full count matrix.
+
+	This method iterates through each set of countfiles and writes the countfiles to the appropriate location
+	"""
+	sample_names = sorted([s.sample_name for s in project.samples])
+	header_line = ['Gene'] + sample_names
+
 	file_groups = get_countfile_groupings(project, util_methods.case_insensitive_glob)
-	# TODO: implement the actual concatenation of the count files
+	
+	for file_group in file_groups:
+		files = sorted(file_group)
+		group_suffix = os.path.basename(files[0]).lstrip(sample_names[0])
+		matrix = []
+		for f in files:
+			read(matrix,f)	
+
+		matrix.insert(0, header_line)
+		outfilepath = os.path.join(os.path.dirname(files[0]), project.parameters.get('count_matrix_file_prefix') + group_suffix)
+		with open(outfilepath, 'w') as outfile:
+			for row in matrix:
+				outfile.write('\t'.join(row) + '\n')
+
+
+def read(matrix, filepath):
+	"""
+	This is a helper method for create_count_matrices(...) that assembles the count matrix by sequentially appending columns as new samples are read/parsed.
+	Adds (in-place) to the existing matrix.    
+	"""
+	was_empty = True if len(matrix) == 0 else False
+	with open(filepath) as f:
+		for i, line in enumerate(f):
+			if i > 1:
+				contents = line.strip().split()
+				if was_empty:
+					matrix.append([contents[0], contents[6]])
+				else:
+					matrix[i-2].append(contents[6]) # the (i-2) corrects for the offset due to the two header lines
 
 
 
@@ -51,7 +90,7 @@ def get_countfile_groupings(project, case_insensitive_glob):
 	"""
 	# get handles (i.e. file suffixes) for all the different count files that were created and make wildcard patterns:
 	s = project.samples[0]
-	extensions = ['*' + countfile.lstrip(s.sample_name) for countfile in s.countfiles]
+	extensions = ['*' + os.path.basename(countfile).lstrip(s.sample_name) for countfile in s.countfiles]
 
 	# create full paths by appending the location of the directory for featureCounts output:
 	paths = [os.path.join(project.parameters.get('feature_counts_output_dir'), p) for p in extensions]
@@ -67,6 +106,7 @@ def get_countfile_groupings(project, case_insensitive_glob):
 			logging.error(grouping)
 			raise CountfileQuantityException('The number of countfiles did not match the number of samples.  Check log.')
 	return file_groups
+
 
 
 def execute_counting(project, util_methods):
