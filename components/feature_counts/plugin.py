@@ -35,8 +35,10 @@ def run(project):
 	execute_counting(project, util_methods)
 
 	# create the final, unnormalized count matrices for each set of BAM files
-	create_count_matrices(project, util_methods)
-
+	merged_count_files = create_count_matrices(project, util_methods)
+	
+	# add to the project object:
+	project.count_matrices = merged_count_files
 
 
 def create_count_matrices(project, util_methods):
@@ -47,6 +49,7 @@ def create_count_matrices(project, util_methods):
 
 	This method iterates through each set of countfiles and writes the countfiles to the appropriate location
 	"""
+	merged_count_files = []
 	sample_names = sorted([s.sample_name for s in project.samples])
 	header_line = ['Gene'] + sample_names
 
@@ -61,9 +64,11 @@ def create_count_matrices(project, util_methods):
 
 		matrix.insert(0, header_line)
 		outfilepath = os.path.join(os.path.dirname(files[0]), project.parameters.get('count_matrix_file_prefix') + group_suffix)
+		merged_count_files.append(outfilepath)
 		with open(outfilepath, 'w') as outfile:
 			for row in matrix:
 				outfile.write('\t'.join(row) + '\n')
+	return merged_count_files
 
 
 def read(matrix, filepath):
@@ -113,7 +118,6 @@ def execute_counting(project, util_methods):
 	"""
 	Creates the calls and executes the system calls for running featureCounts
 	"""
-
 	# default options, as a list of tuples:
 	default_options = [('-a', project.parameters.get('gtf')),('-t', 'exon'),('-g', 'gene_name')]
 	base_command = project.parameters.get('feature_counts') + ' ' + ' '.join(map(lambda x: ' '.join(x), default_options))
@@ -123,18 +127,24 @@ def execute_counting(project, util_methods):
 	for sample in project.samples:
 		countfiles = []
 		for bamfile in sample.bamfiles:
-			output_name = util_methods.case_insensitive_rstrip(os.path.basename(bamfile), 'bam') + project.parameters.get('feature_counts_file_extension')
-			output_path = os.path.join(project.parameters.get('feature_counts_output_dir'), output_name)
-			command = base_command + ' -o ' + output_path + ' ' + bamfile
-			try:
-				logging.info('Calling featureCounts with: ')
-				logging.info(command)
-				subprocess.check_call(command, shell = True)
-				countfiles.append(output_path)
-			except subprocess.CalledProcessError as ex:
-				logging.error('There was an error encountered during execution of featureCounts for sample %s ' % sample.sample_name)
-				raise ex
-		# keep track of the count files in the sample object:
-		sample.countfiles = countfiles
+			if os.path.isfile(bamfile):
+				print 'good'
+				output_name = util_methods.case_insensitive_rstrip(os.path.basename(bamfile), 'bam') + project.parameters.get('feature_counts_file_extension')
+				output_path = os.path.join(project.parameters.get('feature_counts_output_dir'), output_name)
+				command = base_command + ' -o ' + output_path + ' ' + bamfile
+				try:
+					logging.info('Calling featureCounts with: ')
+					logging.info(command)
+					subprocess.check_call(command, shell = True)
+					countfiles.append(output_path)
+				except subprocess.CalledProcessError as ex:
+					logging.error('There was an error encountered during execution of featureCounts for sample %s ' % sample.sample_name)
+					raise ex
+		if len(countfiles) > 0:
+			# keep track of the count files in the sample object:
+			sample.countfiles = countfiles
+		else:
+			logging.error('There were no countfiles created for sample %s. Exiting pipeline.' % sample.sample_name)
+			raise CountfileQuantityException('No countfiles created for sample %s' % sample)
 
 
