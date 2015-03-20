@@ -141,14 +141,23 @@ def execute_counting(project, util_methods):
 				output_name = util_methods.case_insensitive_rstrip(os.path.basename(bamfile), 'bam') + project.parameters.get('feature_counts_file_extension')
 				output_path = os.path.join(project.parameters.get('feature_counts_output_dir'), output_name)
 				command = base_command + ' -o ' + output_path + ' ' + bamfile
-				try:
-					logging.info('Calling featureCounts with: ')
-					logging.info(command)
-					subprocess.check_call(command, shell = True)
-					countfiles.append(output_path)
-				except subprocess.CalledProcessError as ex:
+
+				logging.info('Calling featureCounts with: ')
+				logging.info(command)
+				process = subprocess.Popen(command, shell = True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+
+				stdout, stderror = process.communicate()
+				logging.info('STDOUT from normalization script: ')
+				logging.info(stdout)
+				logging.info('STDERR from normalization script: ')
+				logging.info(stderr)
+		
+				if process.returncode != 0:			
 					logging.error('There was an error encountered during execution of featureCounts for sample %s ' % sample.sample_name)
-					raise ex
+					raise Exception('Error during featureCounts module.')
+				else:
+					countfiles.append(output_path)
+
 			else:
 				logging.error('The bamfile (%s) is not actually a file.' % bamfile)
 				raise MissingBamFileException('Missing BAM file: %s' % bamfile)
