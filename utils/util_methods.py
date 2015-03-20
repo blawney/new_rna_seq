@@ -24,7 +24,10 @@ def locate_config(directory, prefix=''):
 
 
 
-def find_file(root_dir, pattern):
+def find_files(root_dir, pattern):
+	"""
+	This method walks the directory tree underneath the root_dir to find files matching the regex pattern
+	"""
 	matching_files = []
 	for root, dirs, files in os.walk(root_dir):
 		for f in files:
@@ -33,12 +36,10 @@ def find_file(root_dir, pattern):
 				filename = m.group()
 				filepath = os.path.join(root, f)
 				matching_files.append(filepath)
-	if len(matching_files) == 1:
-		return matching_files[0]
-	elif len(matching_files) == 0:
+	if len(matching_files) > 0:
+		return matching_files
+	else:
 		raise MissingFileException('Could not locate a file that matched the regex %s underneath %s' % (pattern, root_dir))
-	elif len(matching_files) > 1:
-		raise MultipleFileFoundException('Found multiple files matchin the regex %s underneath %s' % (pattern, root_dir))
 
 
 

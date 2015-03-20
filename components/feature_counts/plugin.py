@@ -11,6 +11,9 @@ import component_utils
 class CountfileQuantityException(Exception):
 	pass
 
+class MissingBamFileException(Exception):
+	pass
+
 def run(project):
 	logging.info('Beginning featureCounts component of pipeline.')
 
@@ -47,7 +50,8 @@ def create_count_matrices(project, util_methods):
 	and creates a count matrix such that the genes are in rows and the samples are in columns.  In the end, each 'type' of bamfile (e.g. primary, deduped) will have
 	a full count matrix.
 
-	This method iterates through each set of countfiles and writes the countfiles to the appropriate location
+	This method iterates through each set of countfiles and writes the countfiles to the appropriate location.  It then returns a list of the paths for all
+	of the count matrices
 	"""
 	merged_count_files = []
 	sample_names = sorted([s.sample_name for s in project.samples])
@@ -74,7 +78,7 @@ def create_count_matrices(project, util_methods):
 def read(matrix, filepath):
 	"""
 	This is a helper method for create_count_matrices(...) that assembles the count matrix by sequentially appending columns as new samples are read/parsed.
-	Adds (in-place) to the existing matrix.    
+	Adds (in-place) to the existing matrix passed as the first argument.    
 	"""
 	was_empty = True if len(matrix) == 0 else False
 	with open(filepath) as f:
@@ -90,8 +94,10 @@ def read(matrix, filepath):
 
 def get_countfile_groupings(project, case_insensitive_glob):
 	"""
-	This method aggregates all the countfiles generated from each 'type' of bam file and returns the full filepaths as a list of lists.  That is, we may have multiple bam files for each sample (e.g. primary alignments, deduplicated, etc).
-	We will be generating a countfile for each one of those.  When we assemble into a count matrix, we obviously group the files of a particular 'type' (e.g. those coming from deduplicated BAM files).
+	This method aggregates all the countfiles generated from each 'type' of bam file and returns the full filepaths as a list of lists.  
+	That is, we may have multiple bam files for each sample (e.g. primary alignments, deduplicated, etc).
+	We will be generating a countfile for each one of those.  
+	When we assemble into a count matrix, we obviously group the files of a particular 'type' (e.g. those coming from deduplicated BAM files).
 	"""
 	# get handles (i.e. file suffixes) for all the different count files that were created and make wildcard patterns:
 	s = project.samples[0]
@@ -118,9 +124,13 @@ def execute_counting(project, util_methods):
 	"""
 	Creates the calls and executes the system calls for running featureCounts
 	"""
+	logging.info('Begin counting reads in the BAM files.')
+	
 	# default options, as a list of tuples:
 	default_options = [('-a', project.parameters.get('gtf')),('-t', 'exon'),('-g', 'gene_name')]
 	base_command = project.parameters.get('feature_counts') + ' ' + ' '.join(map(lambda x: ' '.join(x), default_options))
+
+	# if a paired experiment, count the fragments, not the single reads
 	if project.parameters.get('paired_alignment'):
 		base_command += ' -p'
 
@@ -128,7 +138,6 @@ def execute_counting(project, util_methods):
 		countfiles = []
 		for bamfile in sample.bamfiles:
 			if os.path.isfile(bamfile):
-				print 'good'
 				output_name = util_methods.case_insensitive_rstrip(os.path.basename(bamfile), 'bam') + project.parameters.get('feature_counts_file_extension')
 				output_path = os.path.join(project.parameters.get('feature_counts_output_dir'), output_name)
 				command = base_command + ' -o ' + output_path + ' ' + bamfile
@@ -140,11 +149,12 @@ def execute_counting(project, util_methods):
 				except subprocess.CalledProcessError as ex:
 					logging.error('There was an error encountered during execution of featureCounts for sample %s ' % sample.sample_name)
 					raise ex
-		if len(countfiles) > 0:
-			# keep track of the count files in the sample object:
-			sample.countfiles = countfiles
-		else:
-			logging.error('There were no countfiles created for sample %s. Exiting pipeline.' % sample.sample_name)
-			raise CountfileQuantityException('No countfiles created for sample %s' % sample)
+			else:
+				logging.error('The bamfile (%s) is not actually a file.' % bamfile)
+				raise MissingBamFileException('Missing BAM file: %s' % bamfile)
+
+		# keep track of the count files in the sample object:
+		sample.countfiles = countfiles
+
 
 

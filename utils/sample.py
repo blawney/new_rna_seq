@@ -2,12 +2,12 @@ import logging
 
 class Sample(object):
 
-	def __init__(self, sample_name, condition, read_1_fastq = None, read_2_fastq = None, bamfile = None):
+	def __init__(self, sample_name, condition, read_1_fastq = None, read_2_fastq = None, bamfiles = []):
 		self.sample_name = sample_name
 		self.condition = condition
 		self.read_1_fastq = read_1_fastq
 		self.read_2_fastq = read_2_fastq
-		self.bamfiles = [bamfile] if bamfile else []
+		self.bamfiles = bamfiles
 		self.flowcell_id = 'DEFAULT'
 		self.lane = '0'
 		self.index = 'DEFAULT_INDEX'

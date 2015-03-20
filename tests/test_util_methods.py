@@ -160,22 +160,22 @@ class UtilMethodsTest(unittest.TestCase):
 			]
 		sample_name = 'A'
 		pattern = sample_name + '.*?' + 'sort.primary.bam'
-		result_1 = find_file(project_home, pattern)
-		expected_result_1 = os.path.join(project_home,'Sample_A/A.sort.primary.bam')
+		result_1 = find_files(project_home, pattern)
+		expected_result_1 = [os.path.join(project_home,'Sample_A/A.sort.primary.bam')]
 
 		sample_name = 'A'
 		pattern = sample_name + '.*?' + 'sort.bam'
-		result_2 = find_file(project_home, pattern)
-		expected_result_2 = os.path.join(project_home,'Sample_A/another_dir/A.sort.bam')
+		result_2 = find_files(project_home, pattern)
+		expected_result_2 = [os.path.join(project_home,'Sample_A/another_dir/A.sort.bam')]
 
 		sample_name = 'C'
 		pattern = sample_name + '.*?' + 'bam'
-		result_3 = find_file(project_home, pattern)
-		expected_result_3 = os.path.join(project_home,'C.sort.primary.bam')
+		result_3 = find_files(project_home, pattern)
+		expected_result_3 = [os.path.join(project_home,'C.sort.primary.bam')]
 
-		self.assertTrue(result_1 == expected_result_1)
-		self.assertTrue(result_2 == expected_result_2)
-		self.assertTrue(result_3 == expected_result_3)
+		self.assertEqual(result_1, expected_result_1)
+		self.assertEqual(result_2, expected_result_2)
+		self.assertEqual(result_3, expected_result_3)
 
 
 	@mock.patch('utils.util_methods.os.path.join', side_effect = dummy_join)
@@ -195,15 +195,14 @@ class UtilMethodsTest(unittest.TestCase):
 		pattern = sample_name + '.*?' + 'sort.bam'
 
 		with self.assertRaises(MissingFileException):
-			f=find_file(project_home, pattern)
+			f=find_files(project_home, pattern)
 
 
 	@mock.patch('utils.util_methods.os.path.join', side_effect = dummy_join)
 	@mock.patch('utils.util_methods.os')
-	def test_find_file_raises_exception_if_ambiguous(self, mock_os, my_join):
+	def test_find_files_returns_multiple_files(self, mock_os, my_join):
 		"""
-		Tests the case where the search term is too broad and we cannot determine which file to use	
-		since multiple results would be returned
+		Tests the case where the search term is more broad and several matches are found
 		"""
 		project_home = '/path/to/project/dir'
 		mock_os.walk.return_value = [('/path/to/project/dir', ['Sample_A', 'Sample_B'], ['C.sort.primary.bam']),
@@ -215,8 +214,9 @@ class UtilMethodsTest(unittest.TestCase):
 		# above we have two files that match the 'A.*?bam' pattern
 		pattern = sample_name + '.*?' + 'bam'
 
-		with self.assertRaises(MultipleFileFoundException):
-			f=find_file(project_home, pattern)
+		f=find_files(project_home, pattern)
+		expected_result = ['/path/to/project/dir/Sample_A/A.sort.primary.bam','/path/to/project/dir/Sample_A/another_dir/A.sort.bam']
+		self.assertEqual(f, expected_result)
 
 
 

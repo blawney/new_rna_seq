@@ -188,8 +188,8 @@ class PipelineBuilder(object):
 					raise ProjectStructureException('The sample directory %s does not exist' % expected_directory)
 			else: # if skipping alignment:
 				search_pattern = sample_name + '.*?' + self.builder_params.get('target_bam')
-				bam_file = util_methods.find_file(self.builder_params.get('project_directory'), search_pattern)
-				new_sample = Sample(sample_name, condition, bamfile = bam_file)
+				bam_files = util_methods.find_files(self.builder_params.get('project_directory'), search_pattern)
+				new_sample = Sample(sample_name, condition, bamfiles = bam_files)
 				logging.info('Adding new sample:\n %s' % new_sample)
 				self.all_samples.append(new_sample)
 		

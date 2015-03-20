@@ -251,7 +251,7 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 			
 
 	
-	def test_zero_countfiles_raises_exception(self):
+	def test_bad_bamfile_path_raises_exception(self):
 
 		self.module.subprocess = mock.Mock()
 
@@ -265,18 +265,18 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		s1 = Sample('A', 'X')
 		s1.bamfiles = ['/path/to/bamdir/A.bam', '/path/to/bamdir/A.primary.bam', '/path/to/bamdir/A.primary.dedup.bam']
 		s2 = Sample('B', 'X')
-		s2.bamfiles = []
+		s2.bamfiles = ['/path/to/bamdir/B.bam', '/bad/path/B.sort.bam']
 
 		project = Project()
 		project.add_parameters(p)
 		project.add_samples([s1, s2])
 
-		m = mock.MagicMock(side_effect = [True, True, True, False])
+		m = mock.MagicMock(side_effect = [True, True, True, True, False])
 		path = self.module.os.path
 		with mock.patch.object(path, 'isfile', m):
-			with self.assertRaises(self.module.CountfileQuantityException):
+			with self.assertRaises(self.module.MissingBamFileException):
 				self.module.execute_counting(project, util_methods)
-	
+
 
 
 if __name__ == "__main__":
