@@ -67,7 +67,7 @@ def create_count_matrices(project, util_methods):
 			read(matrix,f)	
 
 		matrix.insert(0, header_line)
-		outfilepath = os.path.join(os.path.dirname(files[0]), project.parameters.get('count_matrix_file_prefix') + group_suffix)
+		outfilepath = os.path.join(os.path.dirname(files[0]), project.parameters.get('raw_count_matrix_file_prefix') + group_suffix)
 		merged_count_files.append(outfilepath)
 		with open(outfilepath, 'w') as outfile:
 			for row in matrix:

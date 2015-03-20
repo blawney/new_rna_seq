@@ -3,10 +3,17 @@ import sys
 import os
 import imp
 import subprocess
+import re
 
+# to import from the parent directory, append to sys.path
 sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
-
 import component_utils
+
+class NoCountMatricesException(Exception):
+	pass
+
+class MissingCountMatrixFileException(Exception):
+	pass
 
 def run(project):
 
@@ -26,3 +33,45 @@ def run(project):
 
 	# create the final output directory, if possible
 	util_methods.create_directory(output_dir)
+
+	# perform the actual normalization:
+	normalize(project)
+
+
+def normalize(project):
+	"""
+	Creates the calls and executes the system calls for running the normalization
+	"""
+	try:
+		for count_matrix_filepath in project.count_matrices:
+			if os.path.isfile(count_matrix_filepath):
+				logging.info('Located raw count matrix at %s ' % count_matrix_filepath)
+				base = os.path.basename(count_matrix_filepath)
+				normalized_filename = re.sub(project.parameters.get('raw_count_matrix_file_prefix'), 
+							project.parameters.get('normalized_counts_file_prefix'), base)
+				normalized_filepath = os.path.join(project.parameters.get('normalized_counts_output_dir'), normalized_filename)
+				call_script(project.parameters.get('normalization_script'), 
+					count_matrix_filepath, 
+					normalized_filepath, 
+					project.parameters.get('sample_annotation_file'))
+			else:
+				logging.error('Error in finding the count matrices.  There is no file located at %s' % count_matrix_filepath)
+				raise MissingCountMatrixFileException('No file at %s' % count_matrix_filepath)
+	except AttributeError:
+		logging.error('The project does not have any count matrices that can be located.')
+		raise NoCountMatricesException()	
+
+
+def call_script(script, inputfile, outputfile, annotation_file):
+
+	# full path to the script
+	script = os.path.join(os.path.dirname(os.path.realpath(__file__)), script)
+	command = 'Rscript ' + script + ' ' + inputfile + ' ' + outputfile + ' ' + annotation_file
+	try:
+		logging.info('Calling normalization script: ')
+		logging.info(command)
+		subprocess.check_call(command, shell = True)
+	except subprocess.CalledProcessError as ex:
+		logging.error('There was an error while calling the Rscript.  Check the logs.')
+		raise ex
+

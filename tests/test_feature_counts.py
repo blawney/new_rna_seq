@@ -226,7 +226,7 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		self.module.read = mock_read
 
 		p = Params()
-		p.add(count_matrix_file_prefix = 'merged_counts')
+		p.add(raw_count_matrix_file_prefix = 'merged_counts')
 
 		s1 = Sample('A', 'X')
 		s1.countfiles = ['/path/to/final/featureCounts/A.primary.counts', '/path/to/final/featureCounts/A.counts', '/path/to/final/featureCounts/A.primary.dedup.counts']
