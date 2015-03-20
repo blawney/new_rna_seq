@@ -67,11 +67,20 @@ def call_script(script, inputfile, outputfile, annotation_file):
 	# full path to the script
 	script = os.path.join(os.path.dirname(os.path.realpath(__file__)), script)
 	command = 'Rscript ' + script + ' ' + inputfile + ' ' + outputfile + ' ' + annotation_file
-	try:
-		logging.info('Calling normalization script: ')
-		logging.info(command)
-		subprocess.check_call(command, shell = True)
-	except subprocess.CalledProcessError as ex:
-		logging.error('There was an error while calling the Rscript.  Check the logs.')
-		raise ex
+
+	logging.info('Calling normalization script: ')
+	logging.info(command)
+	process = subprocess.Popen(command, shell = True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+
+	stdout, stderror = process.communicate()
+	logging.info('STDOUT from normalization script: ')
+	logging.info(stdout)
+	logging.info('STDERR from normalization script: ')
+	logging.info(stderr)
+		
+	if process.returncode != 0:			
+		logging.error('There was an error while calling the R script for normalization.  Check the logs.')
+		raise Exception('Error during normalization module.')
+
+
 

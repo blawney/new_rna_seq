@@ -120,32 +120,40 @@ def execute_alignments(alignment_script_paths, params):
 	This method starts and monitors the alignment subprocesses.  
 	Since STAR is RAM-intensive, jobs are run sequentially instead of in parallel.
 	"""
+	try: 
+		sleeptime = 60 * float(params.get('wait_length'))
+	except ValueError as ex:
+		logging.error('Could not parse one of the arguments from the configuration file as the proper number:')
+		logging.error(ex.message)
+		raise ex 
 
 	for script_path in alignment_script_paths:
 		attempt_counter = 0
 		os.chmod(script_path, 0774)
-		try:
-			while True: 
-				if assert_memory_reasonable(params.get('min_memory')):
-					logging.info('Executing alignment script at: %s' % script_path)
-					subprocess.check_call(script_path, shell = True)
-					break				
-				elif attempt_counter < int(params.get('wait_cycles')):
-					logging.info('Since memory was not adequate to run STAR, wait for %s minutes' % params.get('wait_length'))
-					logging.info('This is attempt number %s on running the script at %s' % (attempt_counter + 1, script_path))
-					attempt_counter += 1
-					sleep(60 * float(params.get('wait_length')))
-				else:
-					logging.warning('After waiting for %s periods of %s minutes each, still could not get enough reasonable memory to run STAR.')
-					raise AlignmentTimeoutException('Timeout on running the script at %s' % script_path)
-							
-		except subprocess.CalledProcessError:
+		while True: 
+			if assert_memory_reasonable(params.get('min_memory')):
+				logging.info('Executing alignment script at: %s' % script_path)
+				process = subprocess.Popen(script_path, shell = True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+				break				
+			elif attempt_counter < int(params.get('wait_cycles')):
+				logging.info('Since memory was not adequate to run STAR, wait for %s minutes' % params.get('wait_length'))
+				logging.info('This is attempt number %s on running the script at %s' % (attempt_counter + 1, script_path))
+				attempt_counter += 1
+				sleep(sleeptime)
+			else:
+				logging.warning('After waiting for %s periods of %s minutes each, still could not get enough reasonable memory to run STAR.')
+				raise AlignmentTimeoutException('Timeout on running the script at %s' % script_path)
+				
+		stdout, stderror = process.communicate()
+		logging.info('STDOUT from script at %s' % script_path)
+		logging.info(stdout)
+		logging.info('STDERR from script at %s' % script_path)
+		logging.info(stderr)
+		
+		if process.returncode != 0:			
 			logging.error('The STAR alignment process had non-zero exit status. Check the log for details.')
 			raise AlignmentScriptErrorException('Error during STAR alignment')
-		except ValueError as ex:
-			logging.error('Could not parse one of the arguments from the configuration file as the proper number:')
-			logging.error(ex.message)
-			raise ex 
+
 
 
 
