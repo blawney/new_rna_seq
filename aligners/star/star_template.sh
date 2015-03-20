@@ -43,7 +43,7 @@ if [ $PAIRED -eq $NUM0 ]; then
 	 --outSAMstrandField intronMotif \
 	 --outFilterIntronMotifs RemoveNoncanonical \
 	 --outFilterType BySJout \
-         --outFileNamePrefix $OUTDIR'/'$SAMPLE_NAME'.' || {echo 'Failed during single-end alignment. Exiting.  '; exit 1;}
+         --outFileNamePrefix $OUTDIR'/'$SAMPLE_NAME'.' || { echo 'Failed during single-end alignment. Exiting.  '; exit 1; }
 elif [ $PAIRED -eq $NUM1 ]; then
     echo "run paired alignement for " $SAMPLE_NAME
     $STAR --genomeDir $GENOME_INDEX \
@@ -55,7 +55,7 @@ elif [ $PAIRED -eq $NUM1 ]; then
 	 --outSAMstrandField intronMotif \
 	 --outFilterIntronMotifs RemoveNoncanonical \
 	 --outFilterType BySJout \
-         --outFileNamePrefix $OUTDIR'/'$SAMPLE_NAME'.' || {echo 'Failed during paired-end alignment. Exiting.  '; exit 1;}
+         --outFileNamePrefix $OUTDIR'/'$SAMPLE_NAME'.' || { echo 'Failed during paired-end alignment. Exiting.  '; exit 1; }
 else
     echo "Did not specify single- or paired-end option."
     exit 1
@@ -83,16 +83,16 @@ java -Xmx8g -jar $PICARD_DIR/AddOrReplaceReadGroups.jar \
 	  RGPL=ILLUMINA \
 	  RGPU=$INDEX \
 	  RGSM=$SAMPLE_NAME \
-	  RGCN='CCCB'  || {echo 'Failed during Picard tools sort and change headers. Exiting.  '; exit 1;}
+	  RGCN='CCCB'  || { echo 'Failed during Picard tools sort and change headers. Exiting.  '; exit 1; }
 
 
 # create index on the raw, sorted bam:
-$SAMTOOLS index $SORTED_BAM  || {echo 'Failed during samtools index step. Exiting.  '; exit 1;}
+$SAMTOOLS index $SORTED_BAM  || { echo 'Failed during samtools index step. Exiting.  '; exit 1; }
 
 # make a new bam file with only primary alignments
 SORTED_AND_PRIMARY_FILTERED_BAM=$BASE.sort.primary.bam
 $SAMTOOLS view -b -F 0x0100 $SORTED_BAM > $SORTED_AND_PRIMARY_FILTERED_BAM  || {echo 'Failed while filtering for primary alignments. Exiting.  '; exit 1;}
-$SAMTOOLS index $SORTED_AND_PRIMARY_FILTERED_BAM || {echo 'Failed while indexing primary alignment BAM file. Exiting.  '; exit 1;}
+$SAMTOOLS index $SORTED_AND_PRIMARY_FILTERED_BAM || { echo 'Failed while indexing primary alignment BAM file. Exiting.  '; exit 1; }
 
 # Create a de-duped BAM file (may or may not want, but do it anyway) 	
 DEDUPED_PRIMARY_SORTED_BAM=$BASE.sorted.primary.dedup.bam
@@ -104,9 +104,9 @@ java -Xmx8g -jar $PICARD_DIR/MarkDuplicates.jar \
 	TMP_DIR=$TMPDIR \
 	REMOVE_DUPLICATES=TRUE \
 	METRICS_FILE=$DEDUPED_PRIMARY_SORTED_BAM.metrics.out \
-	VALIDATION_STRINGENCY=LENIENT  || {echo 'Failed while marking and removing duplicates. Exiting.  '; exit 1;}
+	VALIDATION_STRINGENCY=LENIENT  || { echo 'Failed while marking and removing duplicates. Exiting.  '; exit 1; }
 
-$SAMTOOLS index $DEDUPED_PRIMARY_SORTED_BAM  || {echo 'Failed while indexing deduplicated BAM file. Exiting.  '; exit 1;}
+$SAMTOOLS index $DEDUPED_PRIMARY_SORTED_BAM  || { echo 'Failed while indexing deduplicated BAM file. Exiting.  '; exit 1; }
 
 #cleanup
 rm $DEFAULT_SAM &
