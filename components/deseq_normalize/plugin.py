@@ -72,7 +72,7 @@ def call_script(script, inputfile, outputfile, annotation_file):
 	logging.info(command)
 	process = subprocess.Popen(command, shell = True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
 
-	stdout, stderror = process.communicate()
+	stdout, stderr = process.communicate()
 	logging.info('STDOUT from normalization script: ')
 	logging.info(stdout)
 	logging.info('STDERR from normalization script: ')
