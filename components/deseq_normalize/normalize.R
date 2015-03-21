@@ -17,7 +17,7 @@ SAMPLE_ANNOTATION_FILE<-args[3]
 count_data <- read.table(RAW_COUNTS_FILE, sep='\t', header = T)
 
 #name the rows by the genes and remove that column of the dataframe
-rownames(count_data)<-count_data[,1]
+gene_names <- count_data[,1]
 count_data<-count_data[-1]
 
 # read the annotations and get the conditions in the same order as the columns of the count_data dataframe
@@ -30,4 +30,6 @@ cds=estimateSizeFactors(cds)
 
 #write out the normalized counts:
 nc<-counts( cds, normalized=TRUE )
-write.table(as.data.frame(nc), file=NORMALIZED_COUNTS_FILE, sep="\t")
+nc<-as.data.frame(nc)
+nc<-cbind(Gene=gene_names, nc)
+write.table(nc, file=NORMALIZED_COUNTS_FILE, sep="\t", quote=F)
