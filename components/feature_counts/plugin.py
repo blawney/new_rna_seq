@@ -21,11 +21,10 @@ def run(project):
 	utils_dir = project.parameters.get('utils_dir')
 
 	# load the parser and the util_methods modules:
-	config_parser = component_utils.load_remote_module('config_parser', utils_dir)
 	util_methods = component_utils.load_remote_module('util_methods', utils_dir)
 
 	# parse this module's config file
-	component_utils.parse_config_file(project, util_methods, config_parser, os.path.dirname(os.path.realpath(__file__)))
+	component_utils.parse_config_file(project, os.path.dirname(os.path.realpath(__file__)))
 
 	# create a full path to the output directory for the featureCount's output and reset the parameter in the project parameters:
 	output_dir = os.path.join(project.parameters.get('output_location'), project.parameters.get('feature_counts_output_dir'))
