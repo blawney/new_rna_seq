@@ -30,12 +30,9 @@ def find_files(root_dir, pattern):
 	"""
 	matching_files = []
 	for root, dirs, files in os.walk(root_dir):
-		for f in files:
-			m = re.match(pattern, f)
-			if m:
-				filename = m.group()
-				filepath = os.path.join(root, f)
-				matching_files.append(filepath)
+		for directory in dirs:
+			glob_path = os.path.join(root, directory, pattern)
+			matching_files += case_insensitive_glob(glob_path)
 	if len(matching_files) > 0:
 		return matching_files
 	else:
