@@ -144,7 +144,7 @@ def execute_alignments(alignment_script_paths, params):
 				logging.warning('After waiting for %s periods of %s minutes each, still could not get enough reasonable memory to run STAR.')
 				raise AlignmentTimeoutException('Timeout on running the script at %s' % script_path)
 				
-		stdout, stderror = process.communicate()
+		stdout, stderr = process.communicate()
 		logging.info('STDOUT from script at %s' % script_path)
 		logging.info(stdout)
 		logging.info('STDERR from script at %s' % script_path)

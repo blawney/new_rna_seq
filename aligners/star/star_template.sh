@@ -91,7 +91,7 @@ $SAMTOOLS index $SORTED_BAM  || { echo 'Failed during samtools index step. Exiti
 
 # make a new bam file with only primary alignments
 SORTED_AND_PRIMARY_FILTERED_BAM=$BASE.sort.primary.bam
-$SAMTOOLS view -b -F 0x0100 $SORTED_BAM > $SORTED_AND_PRIMARY_FILTERED_BAM  || {echo 'Failed while filtering for primary alignments. Exiting.  '; exit 1;}
+$SAMTOOLS view -b -F 0x0100 $SORTED_BAM > $SORTED_AND_PRIMARY_FILTERED_BAM  || { echo 'Failed while filtering for primary alignments. Exiting.  '; exit 1; }
 $SAMTOOLS index $SORTED_AND_PRIMARY_FILTERED_BAM || { echo 'Failed while indexing primary alignment BAM file. Exiting.  '; exit 1; }
 
 # Create a de-duped BAM file (may or may not want, but do it anyway) 	
