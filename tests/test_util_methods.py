@@ -14,8 +14,8 @@ sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
 from utils.util_methods import *
 from utils.custom_exceptions import *
 
-def dummy_join(a,b):
-	return os.path.join(a,b)
+def dummy_join(*args):
+	return os.path.join(*args)
 
 
 def create_mock_open(fileobj):
@@ -146,44 +146,38 @@ class UtilMethodsTest(unittest.TestCase):
 		self.assertTrue(mock_os.makedirs.called, "Did not call the os.makedirs() method")
 
 
+	@mock.patch('utils.util_methods.case_insensitive_glob')
 	@mock.patch('utils.util_methods.os.path.join', side_effect = dummy_join)
 	@mock.patch('utils.util_methods.os')
-	def test_find_file_returns_single_file(self, mock_os, my_join):
+	def test_find_file_makes_correct_call(self, mock_os, my_join, mock_glob):
 		"""
-		Tests that the correct file is returned for several cases.
+		Tests that the correct calls are made to the glob function.
 		"""
+		mock_glob.return_value = ['dummy'] # so that we put something into the list which is supposed to have the matched files.
 		project_home = '/path/to/project/dir'
-		mock_os.walk.return_value = [('/path/to/project/dir', ['Sample_A', 'Sample_B'], ['C.sort.primary.bam']),
-			('/path/to/project/dir/Sample_A', ['another_dir'], ['A.sort.primary.bam']),
+		mock_os.walk.return_value = [('/path/to/project/dir', ['Sample_A', 'Sample_B'], ['C.sort.primary.bam', 'C.sort.primary.bam.bai']),
+			('/path/to/project/dir/Sample_A', ['another_dir'], ['A.sort.primary.bam', 'A.sort.primary.bam.bai']),
 			('/path/to/project/dir/Sample_B', [], ['B.sort.primary.bam']),
 			('/path/to/project/dir/Sample_A/another_dir', [], ['A.sort.bam']),
 			]
 		sample_name = 'A'
 		pattern = sample_name + '.*?' + 'sort.primary.bam'
 		result_1 = find_files(project_home, pattern)
-		expected_result_1 = [os.path.join(project_home,'Sample_A/A.sort.primary.bam')]
+		calls=[mock.call('/path/to/project/dir/Sample_A/A.*?sort.primary.bam'), 	
+			mock.call('/path/to/project/dir/Sample_B/A.*?sort.primary.bam'),
+			mock.call('/path/to/project/dir/Sample_A/another_dir/A.*?sort.primary.bam')]
+		mock_glob.assert_has_calls(calls)
+		
+		
 
-		sample_name = 'A'
-		pattern = sample_name + '.*?' + 'sort.bam'
-		result_2 = find_files(project_home, pattern)
-		expected_result_2 = [os.path.join(project_home,'Sample_A/another_dir/A.sort.bam')]
-
-		sample_name = 'C'
-		pattern = sample_name + '.*?' + 'bam'
-		result_3 = find_files(project_home, pattern)
-		expected_result_3 = [os.path.join(project_home,'C.sort.primary.bam')]
-
-		self.assertEqual(result_1, expected_result_1)
-		self.assertEqual(result_2, expected_result_2)
-		self.assertEqual(result_3, expected_result_3)
-
-
+	@mock.patch('utils.util_methods.case_insensitive_glob')
 	@mock.patch('utils.util_methods.os.path.join', side_effect = dummy_join)
 	@mock.patch('utils.util_methods.os')
-	def test_find_file_raises_exception_if_pattern_not_matched(self, mock_os, my_join):
+	def test_find_file_raises_exception_if_pattern_not_matched(self, mock_os, my_join, mock_glob):
 		"""
 		Tests that an exception is raised if we are searching for a file that does not match the desired pattern
 		"""
+		mock_glob.return_value = []
 		project_home = '/path/to/project/dir'
 		mock_os.walk.return_value = [('/path/to/project/dir', ['Sample_A', 'Sample_B'], ['C.sort.primary.bam']),
 			('/path/to/project/dir/Sample_A', ['another_dir'], ['A.sort.primary.bam']),
@@ -196,27 +190,6 @@ class UtilMethodsTest(unittest.TestCase):
 
 		with self.assertRaises(MissingFileException):
 			f=find_files(project_home, pattern)
-
-
-	@mock.patch('utils.util_methods.os.path.join', side_effect = dummy_join)
-	@mock.patch('utils.util_methods.os')
-	def test_find_files_returns_multiple_files(self, mock_os, my_join):
-		"""
-		Tests the case where the search term is more broad and several matches are found
-		"""
-		project_home = '/path/to/project/dir'
-		mock_os.walk.return_value = [('/path/to/project/dir', ['Sample_A', 'Sample_B'], ['C.sort.primary.bam']),
-			('/path/to/project/dir/Sample_A', ['another_dir'], ['A.sort.primary.bam']),
-			('/path/to/project/dir/Sample_B', [], ['B.sort.primary.bam']),
-			('/path/to/project/dir/Sample_A/another_dir', [], ['A.sort.bam']),
-			]
-		sample_name = 'A'
-		# above we have two files that match the 'A.*?bam' pattern
-		pattern = sample_name + '.*?' + 'bam'
-
-		f=find_files(project_home, pattern)
-		expected_result = ['/path/to/project/dir/Sample_A/A.sort.primary.bam','/path/to/project/dir/Sample_A/another_dir/A.sort.bam']
-		self.assertEqual(f, expected_result)
 
 
 
