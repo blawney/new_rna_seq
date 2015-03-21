@@ -28,4 +28,4 @@ def parse_config_file(project, component_dir, section =  'DEFAULT'):
 	util_methods = load_remote_module('util_methods', utils_dir)
 
 	config_filepath = util_methods.locate_config(component_dir)
-	project.parameters.add(config_parser.read_config(config_filepath))
+	project.parameters.add(config_parser.read_config(config_filepath, section))
