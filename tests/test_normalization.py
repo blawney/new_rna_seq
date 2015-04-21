@@ -86,10 +86,18 @@ class TestNormalizationComponent(unittest.TestCase, ComponentTester):
 
 	def test_system_call_to_Rscript(self):
 		self.module.subprocess = mock.Mock()
+		mock_process = mock.Mock()
+		mock_process.communicate.return_value = (('abc', 'def'))
+		mock_process.returncode = 0
+		self.module.subprocess.Popen.return_value = mock_process
+		self.module.subprocess.STDOUT = 'abc'
+		self.module.subprocess.STDERR = 'def'
 		self.module.call_script('normalize.R', '/path/to/input/raw.counts', '/path/to/output/norm.counts', '/path/to/samples.txt')
 		full_script_path = os.path.join(os.path.dirname(os.path.abspath(self.module.__file__)), 'normalize.R')
 		expected_call = 'Rscript ' + full_script_path + ' /path/to/input/raw.counts /path/to/output/norm.counts /path/to/samples.txt'
-		self.module.subprocess.check_call.assert_called_once_with(expected_call, shell=True)		
+		self.module.subprocess.Popen.assert_called_once_with(expected_call, shell = True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE)
+
+
 		
 
 if __name__ == "__main__":

@@ -83,7 +83,19 @@ class TestStarAligner(unittest.TestCase, ComponentTester):
 
 
 	def test_alignment_calls(self):
+
+		mock_process = mock.Mock(name='mock_process')
+		mock_process.communicate.return_value = (('',''))
+		mock_process.returncode = 0
+
+		mock_popen = mock.Mock(name='mock_popen')
+		mock_popen.return_value = mock_process
+		
 		self.module.subprocess = mock.Mock()
+		self.module.subprocess.Popen = mock_popen
+		self.module.subprocess.STDOUT = ''
+		self.module.subprocess.PIPE = ''
+
 		self.module.os.chmod = mock.Mock()
 		self.module.assert_memory_reasonable = mock.Mock()
 		self.module.assert_memory_reasonable.return_value = True
@@ -94,14 +106,26 @@ class TestStarAligner(unittest.TestCase, ComponentTester):
 		paths = ['/path/to/a.sh', '/path/to/b.sh']
 		self.module.execute_alignments(paths, p)
 
-		calls = [mock.call('/path/to/a.sh', shell=True),
-			mock.call('/path/to/b.sh', shell=True)]
-		self.module.subprocess.check_call.assert_has_calls(calls)
+		calls = [mock.call('/path/to/a.sh', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE),
+			mock.call('/path/to/b.sh', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE)]
+		self.module.subprocess.Popen.assert_has_calls(calls)
 
 
 	def test_alignment_call_raises_exception(self):
 		import subprocess
+
+		mock_process = mock.Mock(name='mock_process')
+		mock_process.communicate.return_value = (('',''))
+		mock_process.returncode = 1
+
+		mock_popen = mock.Mock(name='mock_popen')
+		mock_popen.return_value = mock_process
+		
 		self.module.subprocess = mock.Mock()
+		self.module.subprocess.Popen = mock_popen
+		self.module.subprocess.STDOUT = ''
+		self.module.subprocess.PIPE = ''
+
 		self.module.os.chmod = mock.Mock()
 		self.module.assert_memory_reasonable = mock.Mock()
 		self.module.assert_memory_reasonable.return_value = True
@@ -110,18 +134,29 @@ class TestStarAligner(unittest.TestCase, ComponentTester):
 		p.add(wait_cycles = '50')
 		p.add(min_memory = '40')
 		paths = ['/path/to/a.sh', '/path/to/b.sh']
-		self.module.subprocess.check_call.side_effect = [subprocess.CalledProcessError(0,'cmd'), None]
-		with self.assertRaises(subprocess.CalledProcessError):
+		with self.assertRaises(self.module.AlignmentScriptErrorException):
 			self.module.execute_alignments(paths, p)
 
 		# assert that the second script was not called due to the first one failing.
-		calls = [mock.call('/path/to/a.sh', shell=True)]
-		self.module.subprocess.check_call.assert_has_calls(calls)
+		calls = [mock.call('/path/to/a.sh', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE)]
+		self.module.subprocess.Popen.assert_has_calls(calls)
 
 
 	def test_alignment_call_waits_properly(self):
 		import subprocess
+
+		mock_process = mock.Mock(name='mock_process')
+		mock_process.communicate.return_value = (('',''))
+		mock_process.returncode = 0
+
+		mock_popen = mock.Mock(name='mock_popen')
+		mock_popen.return_value = mock_process
+		
 		self.module.subprocess = mock.Mock()
+		self.module.subprocess.Popen = mock_popen
+		self.module.subprocess.STDOUT = ''
+		self.module.subprocess.PIPE = ''
+
 		self.module.os.chmod = mock.Mock()
 		self.module.assert_memory_reasonable = mock.Mock()
 		self.module.sleep = mock.Mock()
@@ -135,9 +170,9 @@ class TestStarAligner(unittest.TestCase, ComponentTester):
 		self.module.execute_alignments(paths, p)
 
 		# assert that the script was eventually called.
-		calls = [mock.call('/path/to/a.sh', shell=True),
-			mock.call('/path/to/b.sh', shell=True)]
-		self.module.subprocess.check_call.assert_has_calls(calls)
+		calls = [mock.call('/path/to/a.sh', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE),
+			mock.call('/path/to/b.sh', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE)]
+		self.module.subprocess.Popen.assert_has_calls(calls)
 
 		# assert that it had to wait twice (via calling sleep() twice)
 		calls = [mock.call(600), mock.call(600)]

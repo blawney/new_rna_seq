@@ -49,8 +49,12 @@ class PipelineBuilder(object):
 
 		# check parameters passed via commandline
 		self.__check_project_config()
+
+		# add samples
 		self.all_samples = [] 
 		self.__check_and_create_samples()
+
+		# check the contrasts (if applicable)
 		self.__check_contrast_file()
 
 		self.__check_genome_valid()
@@ -148,7 +152,8 @@ class PipelineBuilder(object):
 		name_and_condition_pairings = util_methods.parse_annotation_file(self.builder_params.get('sample_annotation_file'))
 		logging.info('The following sample to group pairings were found in the sample annotation file: ')
 		logging.info(name_and_condition_pairings)
-
+	
+		paired_status = None
 		for sample_name, condition in name_and_condition_pairings:
 			logging.info('Checking sample %s' % sample_name)
 			# if aligning
@@ -168,17 +173,22 @@ class PipelineBuilder(object):
 						else:
 							raise MultipleFileFoundException('There was more than 1 fastq file marked with the suffix %s inside %s' % (self.builder_params.get('read_1_fastq_tag'),expected_directory))
 
-					if self.builder_params.get('paired_alignment') and len(read_2_files) != 1:
-						logging.error('Paired-end alignment was specified on commandline.  However, there was a problem with read 2 fastq files for sample %s inside %s' % (sample_name, expected_directory))
-						if len(read_2_files) == 0:
-							raise MissingFileException('There were no R2 fastq files found.')
+					if len(read_2_files) == 1:
+						logging.info('Read 2 fastq files found for sample %s' % sample_name)
+						if paired_status is not None and paired_status != True:
+							raise InconsistentPairingStatusException('Inconsistent paired-alignment status')
 						else:
-							raise MultipleFileFoundException('There was more than 1 fastq file marked with the suffix %s inside %s' % (self.builder_params.get('read_2_fastq_tag'),expected_directory))
-
-					if self.builder_params.get('paired_alignment'):
-						new_sample = Sample(sample_name, condition, read_1_fastq = read_1_files[0], read_2_fastq = read_2_files[0])
-					else:
-						new_sample = Sample(sample_name, condition, read_1_fastq = read_1_files[0])
+							paired_status = True
+							new_sample = Sample(sample_name, condition, read_1_fastq = read_1_files[0], read_2_fastq = read_2_files[0])
+					elif len(read_2_files) == 0:
+						logging.info('Only read 1 fastq files were found for sample %s' % sample_name)
+						if paired_status is not None and paired_status != False:
+							raise InconsistentPairingStatusException('Inconsistent paired-alignment status')
+						else:
+							paired_status = False
+							new_sample = Sample(sample_name, condition, read_1_fastq = read_1_files[0])
+					elif len(read_2_files) > 1:
+						raise MultipleFileFoundException('There was more than 1 fastq file marked with the suffix %s inside %s' % (self.builder_params.get('read_2_fastq_tag'),expected_directory))
 
 					logging.info('Adding new sample:\n %s' % new_sample)
 					self.all_samples.append(new_sample)
@@ -192,7 +202,22 @@ class PipelineBuilder(object):
 				new_sample = Sample(sample_name, condition, bamfiles = bam_files)
 				logging.info('Adding new sample:\n %s' % new_sample)
 				self.all_samples.append(new_sample)
-		
+
+
+		# set the paired boolean.
+		# if skipping align, try to set the variable.  If exception is thrown, then it has already been set via the input args.  Check 
+		# that the passed arg and the paired_status variable are consistent.  If not, kill the pipeline by throwing exception
+		if not self.builder_params.get('skip_align'):
+			try:
+				self.builder_params.add(paired_alignment = paired_status)
+			except ParameterOverwriteException:
+				if self.builder_params.get('paired_alignment') != paired_status:
+					raise InconsistentPairingStatusException('Arg passed via commandline specified paired_alignment=%s and this is not consistent with the fastq files found.' % self.builder_params.get('paired_alignment'))
+		else: # if skipping alignment, need to know paired status of BAM files...can't guess, and need it for downstream steps
+			try:
+				self.builder_params.get('paired_alignment')
+			except ParameterNotFoundException:
+				raise ParameterNotFoundException('Need to specify whether BAM files are based on paired or unpaired if not aligning.')
 
 
 	def __check_contrast_file(self):
@@ -295,7 +320,7 @@ class PipelineBuilder(object):
 	def __check_project_config(self):
 		"""
 		Reads a project configuration file-- this configuration file lays out how a typical project is arranged in terms of file hierarchy,
-		naming of fastq files, etc.
+		naming of fastq files, etc.  Parameters are added to the builder_params object
 		"""
 		# Read the project-level config file
 		if not self.builder_params.get('project_configuration_file'):

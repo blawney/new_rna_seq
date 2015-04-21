@@ -81,10 +81,14 @@ def parse_annotation_file(annotation_filepath):
 					raise AnnotationFileParseException("Line (%s) did not contain an annotation pair." % repr(line))
 				else:
 					pairings.append(tuple(pair))
-		return set(pairings)
+		s = set(pairings)
+		if len(s) > 0:
+			return s
+		else:
+			raise AnnotationFileParseException('No lines found in annotation file.')
 	except Exception as ex:
 		logging.error("An exception occurred while attempting to parse the annotation file at %s", annotation_filepath)
-		raise AnnotationFileParseException(ex)		
+		raise AnnotationFileParseException(ex.message)		
 
 
 

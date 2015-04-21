@@ -1,7 +1,6 @@
 import logging
 import util_methods
 import config_parser as cfg_parser
-from component import Component
 from custom_exceptions import *
 import os
 

@@ -196,7 +196,6 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
-		mock_pipeline_params.add(paired_alignment = False)
 		mock_pipeline_params.add(target_bam = 'sort.bam')
 		mock_pipeline_params.add(sample_dir_prefix = 'Sample_')
 		p.builder_params = mock_pipeline_params
@@ -240,7 +239,6 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
-		mock_pipeline_params.add(paired_alignment = True)
 		mock_pipeline_params.add(target_bam = 'sort.bam')
 		mock_pipeline_params.add(sample_dir_prefix = 'Sample_')
 		p.builder_params = mock_pipeline_params
@@ -281,7 +279,6 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
-		mock_pipeline_params.add(paired_alignment = True)
 		mock_pipeline_params.add(target_bam = 'sort.bam')
 		mock_pipeline_params.add(sample_dir_prefix = 'Sample_')
 		p.builder_params = mock_pipeline_params
@@ -293,8 +290,121 @@ class TestPipelineBuilder(unittest.TestCase):
 		# mock the missing config file: 
 		mock_os.path.isdir.return_value = True
 
-		with self.assertRaises(MissingFileException):
+		with self.assertRaises(InconsistentPairingStatusException):
 			p._PipelineBuilder__check_and_create_samples()
+
+
+	@mock.patch('utils.util_methods.parse_annotation_file')
+	@mock.patch('utils.util_methods.os.path.join', side_effect = my_join)
+	@mock.patch('utils.pipeline_builder.glob')
+	@mock.patch('utils.pipeline_builder.os')
+	def test_exception_raised_if_one_of_the_samples_has_paired_read_fastq_but_others_dont(self, mock_os, mock_glob, mock_join, mock_parse_method):
+		"""
+		Tests that an exception is raised if paired-end alignment is specified, but no read 2 fastq files are found
+		"""
+		# list of tuples linking the sample names and conditions:
+		pairings = [('A', 'X'),('B', 'X'),('C', 'Y')]
+		mock_parse_method.return_value = pairings
+		
+		# setup all the necessary parameters that the method will look at:
+		p = PipelineBuilder('')
+		p.all_samples = []
+		mock_pipeline_params = Params()
+		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
+		mock_pipeline_params.add(read_1_fastq_tag = '_R1_001.fastq.gz')
+		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
+		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
+		mock_pipeline_params.add(skip_align = False)
+		mock_pipeline_params.add(paired_alignment = True)
+		mock_pipeline_params.add(target_bam = 'sort.bam')
+		mock_pipeline_params.add(sample_dir_prefix = 'Sample_')
+		p.builder_params = mock_pipeline_params
+
+		# mock there being only R1 fastq files for all of the samples:
+		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],['B_R1_001.fastq.gz'],[], ['C_R1_001.fastq.gz'],[]]
+		mock_glob.glob.side_effect = glob_return
+
+		# mock the missing config file: 
+		mock_os.path.isdir.return_value = True
+
+		with self.assertRaises(InconsistentPairingStatusException):
+			p._PipelineBuilder__check_and_create_samples()
+
+
+
+	@mock.patch('utils.util_methods.parse_annotation_file')
+	@mock.patch('utils.util_methods.os.path.join', side_effect = my_join)
+	@mock.patch('utils.pipeline_builder.glob')
+	@mock.patch('utils.pipeline_builder.os')
+	def test_exception_raised_if_paired_alignment_specified_for_single_end(self, mock_os, mock_glob, mock_join, mock_parse_method):
+		"""
+		Tests that an exception is raised if paired-end alignment is specified, but no read 2 fastq files are found
+		"""
+		# list of tuples linking the sample names and conditions:
+		pairings = [('A', 'X'),('B', 'X'),('C', 'Y')]
+		mock_parse_method.return_value = pairings
+		
+		# setup all the necessary parameters that the method will look at:
+		p = PipelineBuilder('')
+		p.all_samples = []
+		mock_pipeline_params = Params()
+		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
+		mock_pipeline_params.add(read_1_fastq_tag = '_R1_001.fastq.gz')
+		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
+		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
+		mock_pipeline_params.add(skip_align = False)
+		mock_pipeline_params.add(paired_alignment = True)
+		mock_pipeline_params.add(target_bam = 'sort.bam')
+		mock_pipeline_params.add(sample_dir_prefix = 'Sample_')
+		p.builder_params = mock_pipeline_params
+
+		# mock there being only R1 fastq files for all of the samples:
+		glob_return = [['A_R1_001.fastq.gz'],[],['B_R1_001.fastq.gz'],[], ['C_R1_001.fastq.gz'],[]]
+		mock_glob.glob.side_effect = glob_return
+
+		# mock the missing config file: 
+		mock_os.path.isdir.return_value = True
+
+		with self.assertRaises(InconsistentPairingStatusException):
+			p._PipelineBuilder__check_and_create_samples()
+
+
+	@mock.patch('utils.util_methods.parse_annotation_file')
+	@mock.patch('utils.util_methods.os.path.join', side_effect = my_join)
+	@mock.patch('utils.pipeline_builder.glob')
+	@mock.patch('utils.pipeline_builder.os')
+	def test_exception_raised_if_single_alignment_specified_for_paired_end(self, mock_os, mock_glob, mock_join, mock_parse_method):
+		"""
+		Tests that an exception is raised if paired-end alignment is specified, but no read 2 fastq files are found
+		"""
+		# list of tuples linking the sample names and conditions:
+		pairings = [('A', 'X'),('B', 'X'),('C', 'Y')]
+		mock_parse_method.return_value = pairings
+		
+		# setup all the necessary parameters that the method will look at:
+		p = PipelineBuilder('')
+		p.all_samples = []
+		mock_pipeline_params = Params()
+		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
+		mock_pipeline_params.add(read_1_fastq_tag = '_R1_001.fastq.gz')
+		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
+		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
+		mock_pipeline_params.add(skip_align = False)
+		mock_pipeline_params.add(paired_alignment = False)
+		mock_pipeline_params.add(target_bam = 'sort.bam')
+		mock_pipeline_params.add(sample_dir_prefix = 'Sample_')
+		p.builder_params = mock_pipeline_params
+
+		# mock there being both R1 and R2 fastq files for all of the samples:
+		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],['B_R1_001.fastq.gz'],['B_R2_001.fastq.gz'], ['C_R1_001.fastq.gz'],['C_R2_001.fastq.gz']]
+		mock_glob.glob.side_effect = glob_return
+
+		# mock the missing config file: 
+		mock_os.path.isdir.return_value = True
+
+		with self.assertRaises(InconsistentPairingStatusException):
+			p._PipelineBuilder__check_and_create_samples()
+
 
 
 
@@ -320,7 +430,6 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
-		mock_pipeline_params.add(paired_alignment = False)
 		mock_pipeline_params.add(target_bam = 'sort.bam')
 		mock_pipeline_params.add(sample_dir_prefix = 'Sample_')
 		p.builder_params = mock_pipeline_params
@@ -337,7 +446,6 @@ class TestPipelineBuilder(unittest.TestCase):
 			p._PipelineBuilder__check_and_create_samples()
 
 		# mock there being both R1 and R2 fastq files (And we want paired alignment), and have one of the R2 entries return >1 in the list:
-		p.builder_params.reset_param('paired_alignment', True)
 		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],['B_R1_001.fastq.gz'],['B_R2_001.fastq.gz'], ['C_R1_001.fastq.gz'],['C_R2_001.fastq.gz', 'C_AT_R2_001.fastq.gz']]
 		mock_glob.glob.side_effect = glob_return
 
@@ -368,6 +476,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = True)
+		mock_pipeline_params.add(paired_alignment = True)
 		mock_pipeline_params.add(target_bam = 'sort.bam')
 		p.builder_params = mock_pipeline_params
 
@@ -380,19 +489,19 @@ class TestPipelineBuilder(unittest.TestCase):
 
 
 	@mock.patch('utils.util_methods.parse_annotation_file')
-	@mock.patch('utils.util_methods.os.path.join', side_effect = my_join)
-	@mock.patch('utils.util_methods.os')
-	def test_samples_created_correctly_for_skipping_align_with_mocked_directory_structure(self, mock_os, mock_join, mock_parse_method):
+	@mock.patch('utils.util_methods.find_files')
+	def test_raises_exception_if_skipping_align_and_pairing_not_specified(self, mock_find_files, mock_parse_method):
 		"""
-		Tests the case where we want to skip alignment and the target suffix is given for the BAM files
-		In this case, we mock the return value from os.walk() and make the actual call to the find_files() method
+		Tests the case where we want to skip alignment and the user has not given whether the BAM files were created
+		from paired or unpaired protocol
 		"""
 		# list of tuples linking the sample names and conditions:
 		pairings = [('A', 'X'),('B', 'X'),('C', 'Y')]
 		mock_parse_method.return_value = pairings
 		
-		# mock the find_files() method returning some paths to bam files:
-		bamfiles = ['/path/to/project/dir/Sample_A/A.sort.primary.bam','/path/to/project/dir/Sample_B/B.sort.primary.bam','/path/to/project/dir/C.sort.primary.bam']
+		# mock the find_file() method returning some paths to bam files:
+		bamfiles = [['A.sort.bam'],['B.sort.bam'],['C.sort.bam']]
+		mock_find_files.side_effect = bamfiles
 
 		# setup all the necessary parameters that the method will look at:
 		p = PipelineBuilder('')
@@ -401,23 +510,11 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = True)
-		mock_pipeline_params.add(target_bam = 'sort.primary.bam')
+		mock_pipeline_params.add(target_bam = 'sort.bam')
 		p.builder_params = mock_pipeline_params
 
-		mock_os.walk.return_value = [('/path/to/project/dir', ['Sample_A', 'Sample_B'], ['C.sort.primary.bam']),
-			('/path/to/project/dir/Sample_A', ['another_dir'], ['A.sort.primary.bam']),
-			('/path/to/project/dir/Sample_B', [], ['B.sort.primary.bam']),
-			('/path/to/project/dir/Sample_A/another_dir', [], ['A.sort.bam']),
-			]
-
-		p._PipelineBuilder__check_and_create_samples()
-		for i,s in enumerate(p.all_samples):
-			self.assertTrue(s.sample_name == pairings[i][0])
-			self.assertTrue(s.read_1_fastq == None)
-			self.assertTrue(s.read_2_fastq == None)
-			self.assertTrue(s.bamfiles == [bamfiles[i]] )
-
-
+		with self.assertRaises(ParameterNotFoundException):
+			p._PipelineBuilder__check_and_create_samples()
 
 
 	def test_creates_contrasts_correctly_with_no_contrast_file_given(self):
@@ -452,6 +549,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		p._PipelineBuilder__check_contrast_file()
 		expected_result = set([('Y','X'),('X','Z'),('Y','Z')])
 		self.assertTrue(set_of_tuples_is_equivalent(p.contrasts, expected_result))
+
 
 	@mock.patch('utils.util_methods.parse_annotation_file')
 	def test_raises_exception_if_non_sensible_contrast_specified(self, mock_parse):

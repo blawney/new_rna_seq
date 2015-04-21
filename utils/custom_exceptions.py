@@ -43,3 +43,6 @@ class ProjectStructureException(Exception):
 
 class ContrastSpecificationException(Exception):
 	pass
+
+class InconsistentPairingStatusException(Exception):
+	pass

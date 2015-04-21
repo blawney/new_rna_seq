@@ -67,7 +67,7 @@ def setup_args():
 				action="store_true",
 				required=False,
 				default=False,
-				help="If paired alignment, with two FASTQ files",
+				help="If should be treated as paired alignment",
 				dest="paired_alignment")
 
 	parser.add_argument("-skip_analysis",

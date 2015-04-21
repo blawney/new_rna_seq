@@ -36,7 +36,18 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 
 
 	def test_system_calls_paired_experiment(self):
+
+		mock_process = mock.Mock(name='mock_process')
+		mock_process.communicate.return_value = (('',''))
+		mock_process.returncode = 0
+
+		mock_popen = mock.Mock(name='mock_popen')
+		mock_popen.return_value = mock_process
+		
 		self.module.subprocess = mock.Mock()
+		self.module.subprocess.Popen = mock_popen
+		self.module.subprocess.STDOUT = ''
+		self.module.subprocess.PIPE = ''
 
 		p = Params()
 		p.add(gtf = '/path/to/GTF/mock.gtf')
@@ -57,10 +68,10 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		with mock.patch.object(path, 'isfile', m):
 			self.module.execute_counting(project, util_methods)
 
-			calls = [mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -p -o /path/to/final/featureCounts/A.counts /path/to/bamdir/A.bam', shell=True),
-				mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -p -o /path/to/final/featureCounts/A.primary.counts /path/to/bamdir/A.primary.bam', shell=True),
-				mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -p -o /path/to/final/featureCounts/A.primary.dedup.counts /path/to/bamdir/A.primary.dedup.bam', shell=True)]
-			self.module.subprocess.check_call.assert_has_calls(calls)
+			calls = [mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -p -o /path/to/final/featureCounts/A.counts /path/to/bamdir/A.bam', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE),
+				mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -p -o /path/to/final/featureCounts/A.primary.counts /path/to/bamdir/A.primary.bam', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE),
+				mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -p -o /path/to/final/featureCounts/A.primary.dedup.counts /path/to/bamdir/A.primary.dedup.bam', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE)]
+			mock_popen.assert_has_calls(calls)
 
 		# check that the sample contains paths to the new count files in the correct locations:
 		expected_files = [os.path.join('/path/to/final/featureCounts', re.sub('bam', 'counts', os.path.basename(f))) for f in s1.bamfiles]
@@ -69,7 +80,17 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		
 
 	def test_system_calls_single_end_experiment(self):
+		mock_process = mock.Mock(name='mock_process')
+		mock_process.communicate.return_value = (('',''))
+		mock_process.returncode = 0
+
+		mock_popen = mock.Mock(name='mock_popen')
+		mock_popen.return_value = mock_process
+		
 		self.module.subprocess = mock.Mock()
+		self.module.subprocess.Popen = mock_popen
+		self.module.subprocess.STDOUT = ''
+		self.module.subprocess.PIPE = ''
 		
 		p = Params()
 		p.add(gtf = '/path/to/GTF/mock.gtf')
@@ -90,10 +111,10 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		with mock.patch.object(path, 'isfile', m):
 			self.module.execute_counting(project, util_methods)
 
-			calls = [mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -o /path/to/final/featureCounts/A.counts /path/to/bamdir/A.bam', shell=True),
-				mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -o /path/to/final/featureCounts/A.primary.counts /path/to/bamdir/A.primary.bam', shell=True),
-				mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -o /path/to/final/featureCounts/A.primary.dedup.counts /path/to/bamdir/A.primary.dedup.bam', shell=True)]
-			self.module.subprocess.check_call.assert_has_calls(calls)
+			calls = [mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -o /path/to/final/featureCounts/A.counts /path/to/bamdir/A.bam', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE),
+				mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -o /path/to/final/featureCounts/A.primary.counts /path/to/bamdir/A.primary.bam', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE),
+				mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -o /path/to/final/featureCounts/A.primary.dedup.counts /path/to/bamdir/A.primary.dedup.bam', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE)]
+			self.module.subprocess.Popen.assert_has_calls(calls)
 
 			# check that the sample contains paths to the new count files in the correct locations:
 			expected_files = [os.path.join('/path/to/final/featureCounts', re.sub('bam', 'counts', os.path.basename(f))) for f in s1.bamfiles]
@@ -254,6 +275,10 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 	def test_bad_bamfile_path_raises_exception(self):
 
 		self.module.subprocess = mock.Mock()
+		mock_process = mock.Mock()
+		mock_process.communicate.return_value = (('abc', 'def'))
+		mock_process.returncode = 0
+		self.module.subprocess.Popen.return_value = mock_process
 
 		p = Params()
 		p.add(gtf = '/path/to/GTF/mock.gtf')
