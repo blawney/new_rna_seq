@@ -16,7 +16,7 @@ SAMPLE_ANNOTATION_FILE<-args[3]
 # read the raw count matrix:
 count_data <- read.table(RAW_COUNTS_FILE, sep='\t', header = T)
 
-#name the rows by the genes and remove that column of the dataframe
+# save the gene names for later and remove that column of the dataframe
 gene_names <- count_data[,1]
 count_data<-count_data[-1]
 
