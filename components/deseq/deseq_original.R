@@ -2,24 +2,15 @@ if(!require("DESeq", character.only=T)) stop("Please install the DESeq package f
 if(!require("RColorBrewer", character.only=T)) stop("Please install the RColorBrewer package first.")
 if(!require("gplots", character.only=T)) stop("Please install the gplots package first.")
 
-#get args from the commandline:
-# 1: full path to the raw count matrix (
-# 2: full path to the directory to place result files
-# 3: an identifying string for the output file
-# 4: the condition to be compared TO-- e.g. the control condition
-# 5: the contrasting condition -- the experimental/case condition
-# 6: a name for the heatmap file (used for finding the files elsewhere).  Something like 'heatmap.png'.  
-#     Will have a more specific identifier pre-pended to this.
-# 7: the number of genes shown in the heatmap.  Take the top genes by mean expression across all samples.
-# 8: a flag/id that will allow easier identification of contrast-level files/analyses
+# get args from the commandline:
 
 args<-commandArgs(TRUE)
 RAW_COUNT_MATRIX<-args[1]
-CONDITION_A<-args[2]
-CONDITION_B<-args[3]
-OUTPUT_DIR<-args[4]
-OUTPUT_DESEQ_FILE <- args[5]
-OUTPUT_HEATMAP_FILE <- args[6]
+SAMPLE_ANNOTATION_FILE<-args[2]
+CONDITION_A<-args[3]
+CONDITION_B<-args[4]
+OUTPUT_DESEQ_FILE <- args[5] #full path
+OUTPUT_HEATMAP_FILE <- args[6] #full path
 NUM_GENES<-as.integer(args[7])
 
 # read the raw count matrix:
@@ -40,10 +31,7 @@ cds=estimateDispersions(cds)
 res=nbinomTest(cds, CONDITION_A, CONDITION_B)
 
 #write the differential expression results to a file:
-file_id<-paste(CONDITION_B, CONTRAST_FLAG, CONDITION_A, sep='')
-basefile_id<-paste(file_id, DESEQ_OUTPUT_IDENTIFIER,"csv", sep='.')
-result_file<-paste(OUTPUT_DIR, basefile_id, sep='/')
-write.csv(as.data.frame(res), file=result_file, row.names=FALSE)
+write.csv(as.data.frame(res), file=OUTPUT_DESEQ_FILE, row.names=FALSE)
 
 
 ######### For creating contrast-level heatmap ######################
@@ -66,7 +54,7 @@ ratio<-0.25*NUM_GENES/sample_count
 h<-shortest_dimension*ratio
 w<-shortest_dimension
 
-#however, if more samples than genes, switch the dimensions:
+#however, if more samples than genes, switch the dimensions so it looks reasonable:
 if (ratio < 1)
 {
 	temp<-w
@@ -74,12 +62,11 @@ if (ratio < 1)
 	h<-temp
 }
 
+# adjust the text size to be reasonable with the size of the heatmap
 text_size = 1.5+1/log10(NUM_GENES)
 
 #write the heatmap as a png:
-file_id<-paste(CONDITION_B, CONTRAST_FLAG, CONDITION_A, sep='')
-HEATMAP_FILE<-paste(file_id, HEATMAP_FILE, sep=".")
-png(filename=paste(OUTPUT_DIR,HEATMAP_FILE, sep="/"), width=w, height=h, units="px")
+png(filename=OUTPUT_HEATMAP_FILE, width=w, height=h, units="px")
 heatmap.2(exprs(vsdFull)[select,], col=heatmapcols, trace="none", margin=c(25,12), cexRow=text_size, cexCol=text_size)
 dev.off()
 
