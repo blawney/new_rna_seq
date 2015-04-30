@@ -1,4 +1,3 @@
-import cmd_line_parser as cl_parser
 import config_parser as cfg_parser
 from util_classes import Params
 import util_methods
@@ -21,18 +20,15 @@ class PipelineBuilder(object):
 		self.builder_params = Params()
 		self.builder_params.add(pipeline_home = pipeline_home_dir)
 
-	def setup(self):
+	def setup(self, cl_params):
 		"""
 		Parses commandline input, creates the output directory, instantiates a log file
 		"""
-		self.builder_params.add(cl_parser.read())
+		self.builder_params.add(cl_params)
 
 		# create the output directory (if possible) from the commandline args
 		output_dir = self.builder_params.get('output_location')
 		self.__create_output_dir(output_dir)
-
-		# instantiate a logfile in the output directory
-		self.__create_logger(output_dir)
 
 
 	def configure(self):
@@ -348,15 +344,6 @@ class PipelineBuilder(object):
 
 	def __create_output_dir(self, output_dir):
 		util_methods.create_directory(output_dir)
-
-
-	def __create_logger(self, log_dir):
-		"""
-		Create a logfile in the log_dir directory
-		"""
-		timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-		logfile = os.path.join(log_dir, str(timestamp)+".rnaseq.log")
-		logging.basicConfig(filename=logfile, level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s")
 
 
 

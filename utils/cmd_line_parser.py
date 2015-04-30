@@ -15,6 +15,13 @@ def setup_args():
 	"""
 	parser = argparse.ArgumentParser()
 
+	parser.add_argument("-restart",
+				required=False,
+				default=None,
+				help="Path to a restart file.",
+				action=MakeAbsolutePathAction,
+				dest="restart")
+
 	parser.add_argument("-d", "--dir", 
 				required=True, 
 				help="Full path to the project directory.",
