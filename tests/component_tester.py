@@ -9,7 +9,7 @@ class ComponentTester(object):
 	"""
 	def loader(self, module_directory):
 		"""
-		The 'module_directory' argument is relative to the root directory of the tool (where the main launcher script resides)
+		The 'module_directory' argument is relative to the root directory (where the main launcher script resides)
 		"""
 		root = path.dirname( path.dirname( path.abspath(__file__) ) ) 
 		self.module_directory = path.join(root, module_directory)
