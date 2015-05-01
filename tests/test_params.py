@@ -147,6 +147,34 @@ class TestParams(unittest.TestCase):
 		self.assertEqual(p1.get('b'), 'prefix:fileB.txt')
 
 
+	def test_prepend_raises_exception_if_not_parameter_found(self):
+		"""
+		This tests that the method fails gracefully if the parameter was not located
+		"""
+
+		with self.assertRaises(ParameterNotFoundException):
+			p = Params()
+			p.prepend_param('a', '/path/to/prepend', os.path.join)
+		
+
+	def test_prepend_fails_if_callable_is_not_compatible(self):
+		"""
+		This tests that error is thrown if passed callable is not valid (E.g. if takes 3 args, etc)
+		"""
+		p1 = Params()
+		p1.add(a='fileA.txt', b=1)
+
+		def bad_method(x,y,z):
+			return x+y+z
+
+		# if method has wrong number of args
+		with self.assertRaises(TypeError):
+			p1.prepend_param('a', '/path/to/prepend', bad_method)
+
+		# if try to add a integer and a string: (or other incompatible types)
+		with self.assertRaises(TypeError):
+			p1.prepend_param('b', 'prefix', lambda x,y: x+':'+y)
+
 
 if __name__ == "__main__":
 	unittest.main()
