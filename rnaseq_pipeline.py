@@ -34,6 +34,7 @@ if __name__ == "__main__":
 		# if restarting from a pickle object
 		if cmd_line_params.get('restart', None):
 			configured_pipeline = pickle.load(open( cmd_line_params.get('restart'), 'rb'))
+			create_logger(configured_pipeline.project.parameters.get('output_location'))
 		else:
 			# build the pipeline:
 			builder = PipelineBuilder(pipeline_home)
