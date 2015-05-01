@@ -133,6 +133,20 @@ class TestParams(unittest.TestCase):
 			p3 = p1 + p2
 
 
+	def test_prepend_executes_correctly(self):
+		"""
+		This tests that the method works as expected for various calls
+		"""
+		p1 = Params()
+		p1.add(a='fileA.txt', b='fileB.txt')
+
+		p1.prepend_param('a', '/path/to/prepend', os.path.join)
+		self.assertEqual(p1.get('a'), os.path.join('/path/to/prepend/','fileA.txt'))
+
+		p1.prepend_param('b', 'prefix', lambda x,y: x+':'+y)
+		self.assertEqual(p1.get('b'), 'prefix:fileB.txt')
+
+
 
 if __name__ == "__main__":
 	unittest.main()
