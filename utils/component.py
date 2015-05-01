@@ -7,6 +7,7 @@ class Component(object):
 		self.name = name
 		self.location = directory
 		self.project = None
+		self.completed = False # keeps track of whether the component has been executed successfully.
 
 
 	def __str__(self):
@@ -16,6 +17,9 @@ class Component(object):
 
 
 	def add_project_data(self, project):
+		"""
+		Adds a reference to a Project object.  This way the Component has access to the various parameters/constants 
+		"""
 		self.project = project
 
 

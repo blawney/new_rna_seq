@@ -4,8 +4,6 @@ import config_parser as cfg_parser
 from custom_exceptions import *
 import os
 
-DEFAULT_CONTRAST = 'contrasts.txt'
-
 class Pipeline(object):
 
 	def __init__(self):
@@ -32,10 +30,17 @@ class Pipeline(object):
 
 
 	def run(self):
+		"""
+		Sequentially runs the Component objects that have been added to this Pipeline object
+		"""
 		if self.project and len(self.project.samples) > 0:
 			for component in self.components:
-				component.add_project_data(self.project)
-				component.run()
+				if not component.completed:
+					component.add_project_data(self.project)
+					component.run()
+					component.completed = True
+				else:
+					logging.info('Component %s has been already completed successfully.  Moving onto next one...' % component.name)
 		else:
 			logging.error('Could not run the pipeline since no project was added, or there were zero samples detected.')
 			raise Exception('There was nothing to run.  Check the Samples were properly added to the project.')

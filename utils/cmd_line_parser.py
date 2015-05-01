@@ -18,7 +18,7 @@ def setup_args():
 	parser.add_argument("-restart",
 				required=False,
 				default=None,
-				help="Path to a restart file.",
+				help="Path to a restart file (a pickled python object).",
 				action=MakeAbsolutePathAction,
 				dest="restart")
 
