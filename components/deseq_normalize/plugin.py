@@ -34,13 +34,16 @@ def run(project):
 	util_methods.create_directory(output_dir)
 
 	# perform the actual normalization:
-	normalize(project)
+	output_files = normalize(project)
+	
+	project.normalized_count_files = output_files
 
 
 def normalize(project):
 	"""
 	Creates the calls and executes the system calls for running the normalization
 	"""
+	output_files = []
 	try:
 		for count_matrix_filepath in project.count_matrices:
 			if os.path.isfile(count_matrix_filepath):
@@ -53,9 +56,11 @@ def normalize(project):
 					count_matrix_filepath, 
 					normalized_filepath, 
 					project.parameters.get('sample_annotation_file'))
+				output_files.append(normalized_filepath)
 			else:
 				logging.error('Error in finding the count matrices.  There is no file located at %s' % count_matrix_filepath)
 				raise MissingCountMatrixFileException('No file at %s' % count_matrix_filepath)
+		return output_files
 	except AttributeError:
 		logging.error('The project does not have any count matrices that can be located.')
 		raise NoCountMatricesException()	

@@ -69,7 +69,7 @@ def run_qc(project, util_methods):
 			if process.returncode != 0:			
 				logging.error('There was an error encountered during execution of rna-SeQC for sample %s ' % sample.sample_name)
 				raise Exception('Error during rna-SeQC module.')
-
+			sample.rnaseqc_report = os.path.join(output_dir, project.parameters.get('rnaseqc_report_name'))
 		else:
 			logging.error('The bamfile (%s) is not actually a file.' % bamfile)
 			raise MissingBamFileException('Missing BAM file: %s' % bamfile)

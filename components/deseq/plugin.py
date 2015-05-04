@@ -33,13 +33,17 @@ def run(project):
 	# create the final output directory, if possible
 	util_methods.create_directory(output_dir)
 
-	call_deseq(project)
+	deseq_output_files, heatmap_files = call_deseq(project)
+	project.deseq_output_files = deseq_output_files
+	project.heatmap_files = heatmap_files
 
 
 def call_deseq(project):
 	"""
 	Creates the calls and executes the system calls for running the DGE analysis
 	"""
+	deseq_output_files = []
+	heatmap_files = []
 	try:
 		# there is one count matrix per 'type' of BAM file (e.g. counts for deduped, deduped+primary filtered, etc.)
 		for count_matrix_filepath in project.count_matrices:
@@ -71,9 +75,12 @@ def call_deseq(project):
 					arg_string = ' '.join(args)
 
 					call_script(project.parameters.get('deseq_script'), arg_string)
+					deseq_output_files.append(output_deseq_file)
+					heatmap_files.append(output_deseq_heatmap)
 			else:
 				logging.error('Error in finding the count matrices.  There is no file located at %s' % count_matrix_filepath)
 				raise MissingCountMatrixFileException('No file at %s' % count_matrix_filepath)
+		return (deseq_output_files, heatmap_files)
 	except AttributeError:
 		logging.error('The project does not have any count matrices that can be located.')
 		raise NoCountMatricesException()
