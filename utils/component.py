@@ -8,7 +8,7 @@ class Component(object):
 		self.location = directory
 		self.project = None
 		self.completed = False # keeps track of whether the component has been executed successfully.
-
+		self.outputs = None 
 
 	def __str__(self):
 		s = 'Component name: ' + str(self.name) + '\n'
@@ -39,8 +39,9 @@ class Component(object):
 			
 			run_method = getattr(module, method_name)
 
-			# run the component:
-			run_method(self.project)
+			# run the component and add the output objects to this object:
+			self.outputs.append(run_method(self.name, self.project))
+
 		except ImportError as ex:
 			logging.error('ImportError: Could not load the module at %s ' % filename)
 			raise ex

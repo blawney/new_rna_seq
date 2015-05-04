@@ -28,4 +28,19 @@ def parse_config_file(project, component_dir, section =  'DEFAULT'):
 	util_methods = load_remote_module('util_methods', utils_dir)
 
 	config_filepath = util_methods.locate_config(component_dir)
-	project.parameters.add(config_parser.read_config(config_filepath, section))
+	return config_parser.read_config(config_filepath, section)
+
+
+class InvalidDisplayOptionException(Exception):
+	pass
+
+
+class ComponentOutput(object):
+	DISPLAY_FORMATS = [ 'list', 'collapse_panel_iframe', 'collapse_panel' ]
+	def __init__(self, files, header_msg, display_format):
+		self.files = files
+		self.header_msg = header_msg
+		if display_format in DISPLAY_FORMATS:
+			self.display_format = display_format
+		else:
+			raise InvalidDisplayOptionException('Display format %s is not implemented.  Implement it, or choose from %s' % (display_format, DISPLAY_FORMATS))

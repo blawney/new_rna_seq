@@ -15,7 +15,7 @@ class MissingCountMatrixFileException(Exception):
 	pass
 
 
-def run(project):
+def run(name, project):
 
 	# get the location of the utils directory:
 	utils_dir = project.parameters.get('utils_dir')
@@ -24,29 +24,34 @@ def run(project):
 	util_methods = component_utils.load_remote_module('util_methods', utils_dir)
 
 	# parse this module's config file
-	component_utils.parse_config_file(project, os.path.dirname(os.path.realpath(__file__)))
+	this_dir = os.path.dirname(os.path.realpath(__file__))
+	project.parameters.add(component_utils.parse_config_file(this_dir)
+	component_params = component_utils.parse_config_file(this_dir, 'COMPONENT_SPECIFIC')
 
-	# create a full path to the output directory for the output and reset the parameter in the project parameters:
-	output_dir = os.path.join(project.parameters.get('output_location'), project.parameters.get('deseq_output_dir'))
-	project.parameters.reset_param('deseq_output_dir', output_dir)
+	# create a full path to the output directory for the output:
+	output_dir = os.path.join(project.parameters.get('output_location'), component_params.get('deseq_output_dir'))
+	component_params['deseq_output_dir']  = output_dir 
 
 	# create the final output directory, if possible
 	util_methods.create_directory(output_dir)
 
-	deseq_output_files, heatmap_files = call_deseq(project)
-	project.deseq_output_files = deseq_output_files
-	project.heatmap_files = heatmap_files
+	deseq_output_files, heatmap_files = call_deseq(project, component_params)
+
+	# create the ComponentOutput object and return it
+	c1 = component_utils.ComponentOutput(deseq_output_files, component_params.get('deseq_header_msg'), component_params.get('deseq_display_format'))
+	c2 = component_utils.ComponentOutput(heatmap_files, component_params.get('heatmap_header_msg'), component_params.get('heatmap_display_format'))
+	return [ c1, c2 ]
 
 
-def call_deseq(project):
+def call_deseq(project, component_params):
 	"""
 	Creates the calls and executes the system calls for running the DGE analysis
 	"""
-	deseq_output_files = []
-	heatmap_files = []
+	deseq_output_files = {}
+	heatmap_files = {}
 	try:
 		# there is one count matrix per 'type' of BAM file (e.g. counts for deduped, deduped+primary filtered, etc.)
-		for count_matrix_filepath in project.count_matrices:
+		for count_matrix_filepath in project.raw_count_matrices:
 			if os.path.isfile(count_matrix_filepath):
 				logging.info('Located raw count matrix at %s ' % count_matrix_filepath)
 				base = os.path.basename(count_matrix_filepath)
@@ -61,9 +66,10 @@ def call_deseq(project):
 					exp_condition = contrast_pair[1]
 
 					# construct the full path to the output deseq file and heatmap file
-					contrast_prefix = exp_condition + project.parameters.get('deseq_contrast_flag') + ctrl_condition 
-					output_deseq_file = os.path.join(project.parameters.get('deseq_output_dir'), contrast_prefix + base + project.parameters.get('deseq_output_tag'))
-					output_deseq_heatmap = os.path.join(project.parameters.get('deseq_output_dir'), contrast_prefix + base + project.parameters.get('heatmap_file_tag'))
+					contrast_prefix = exp_condition + component_params.get('deseq_contrast_flag') + ctrl_condition
+					contrast_base =  contrast_prefix + base
+					output_deseq_file = os.path.join(component_params.get('deseq_output_dir'), contrast_base + component_params.get('deseq_output_tag'))
+					output_deseq_heatmap = os.path.join(component_params.get('deseq_output_dir'), contrast_base + component_params.get('heatmap_file_tag'))
 
 					args = [count_matrix_filepath, 
 							project.parameters.get('sample_annotation_file'), 
@@ -71,12 +77,12 @@ def call_deseq(project):
 							exp_condition, 
 							output_deseq_file, 
 							output_deseq_heatmap, 
-							project.parameters.get('number_of_genes_for_heatmap')]
+							component_params.get('number_of_genes_for_heatmap')]
 					arg_string = ' '.join(args)
 
-					call_script(project.parameters.get('deseq_script'), arg_string)
-					deseq_output_files.append(output_deseq_file)
-					heatmap_files.append(output_deseq_heatmap)
+					call_script(component_params.get('deseq_script'), arg_string)
+					deseq_output_files[contrast_base[:-1]] = output_deseq_file # [:-1] removes the trailing dot '.'
+					heatmap_files[contrast_base[:-1]] = output_deseq_heatmap # [:-1] removes the trailing dot '.'
 			else:
 				logging.error('Error in finding the count matrices.  There is no file located at %s' % count_matrix_filepath)
 				raise MissingCountMatrixFileException('No file at %s' % count_matrix_filepath)

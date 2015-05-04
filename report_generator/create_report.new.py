@@ -21,6 +21,8 @@ def write_report(pipeline):
 		# create the context.  This is a dictionary of key-value pairs that map to items in the template html file
 		context = {}
 
-		
+		# TODO: add the fastq, bam, fastqc
+	
+		# TODO: add components by using pipeline.components
 	except Exception as ex:
 		raise ex

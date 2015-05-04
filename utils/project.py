@@ -6,7 +6,6 @@ class Project(object):
 		self.samples = None
 		self.contrasts = None
 
-
 	def add_parameters(self, params):
 		if self.parameters:
 			self.parameters += params

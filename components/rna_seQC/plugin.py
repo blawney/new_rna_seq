@@ -13,7 +13,7 @@ class MissingBamFileException(Exception):
 	pass
 
 
-def run(project):
+def run(name, project):
 	logging.info('Beginning rnaSeQC component of pipeline.')
 
 	# get the location of the utils directory:
@@ -23,25 +23,29 @@ def run(project):
 	util_methods = component_utils.load_remote_module('util_methods', utils_dir)
 
 	# parse this module's config file
-	component_utils.parse_config_file(project, os.path.dirname(os.path.realpath(__file__)))
+	this_dir = os.path.dirname(os.path.realpath(__file__))
+	project.parameters.add(component_utils.parse_config_file(this_dir)
+	component_params = component_utils.parse_config_file(this_dir, 'COMPONENT_SPECIFIC')
 
-	# create a full path to the output directory for rnaseQC's output and reset the parameter in the project parameters:
-	output_dir = os.path.join(project.parameters.get('output_location'), project.parameters.get('rnaseqc_output_dir'))
-	project.parameters.reset_param('rnaseqc_output_dir', output_dir)
+	# create a full path to the output directory for rnaseQC's output:
+	output_dir = os.path.join(project.parameters.get('output_location'), component_params.get('rnaseqc_output_dir'))
 
 	# create the final output directory, if possible
 	util_methods.create_directory(output_dir)
 
 	# run the QC processes:
-	run_qc(project)
+	reports = run_qc(project, component_params, util_methods)
+
+	return [component_utils.ComponentOutput(reports, component_params.get('header_msg'), component_params.get('display_format')),]
 
 
-def run_qc(project, util_methods):
+def run_qc(project, component_params, util_methods):
 
-	base_command = 'java -jar ' + project.parameters.get('rnaseqc_jar') 
+	base_command = 'java -jar ' + component_params.get('rnaseqc_jar') 
 	base_command +=' -r ' + project.parameters.get('genome_fasta')
-	base_command +=' -t ' + project.parameters.get('rnaseqc_gtf')
+	base_command +=' -t ' + component_params.get('rnaseqc_gtf')
 
+	all_reports = {}
 	for sample in project.samples:
 		# only use the most 'raw' bamfile at this point.
 		bamfile = get_earliest_version_of_file(sample.bamfiles)
@@ -49,7 +53,7 @@ def run_qc(project, util_methods):
 
 			# make output directory for this BAM file's QC:
 			name = util_methods.case_insensitive_rstrip(os.path.basename(bamfile), 'bam')
-			output_dir = os.path.join(project.parameters.get('rnaseqc_output_dir'), name)
+			output_dir = os.path.join(component_params.get('rnaseqc_output_dir'), name)
 			util_methods.create_directory(output_dir)
 
 			arg = '"' + sample.sample_name + '|' + bamfile + '|-"'
@@ -69,10 +73,13 @@ def run_qc(project, util_methods):
 			if process.returncode != 0:			
 				logging.error('There was an error encountered during execution of rna-SeQC for sample %s ' % sample.sample_name)
 				raise Exception('Error during rna-SeQC module.')
-			sample.rnaseqc_report = os.path.join(output_dir, project.parameters.get('rnaseqc_report_name'))
+			report_path = os.path.join(output_dir, component_params.get('rnaseqc_report_name'))
+			sample.rnaseqc_report = report_path
+			all_reports[name] = report_path
 		else:
 			logging.error('The bamfile (%s) is not actually a file.' % bamfile)
 			raise MissingBamFileException('Missing BAM file: %s' % bamfile)
+	return all_reports
 
 
 

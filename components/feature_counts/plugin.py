@@ -14,7 +14,7 @@ class CountfileQuantityException(Exception):
 class MissingBamFileException(Exception):
 	pass
 
-def run(project):
+def run(name, project):
 	logging.info('Beginning featureCounts component of pipeline.')
 
 	# get the location of the utils directory:
@@ -24,26 +24,31 @@ def run(project):
 	util_methods = component_utils.load_remote_module('util_methods', utils_dir)
 
 	# parse this module's config file
-	component_utils.parse_config_file(project, os.path.dirname(os.path.realpath(__file__)))
+	this_dir = os.path.dirname(os.path.realpath(__file__))
+	project.parameters.add(component_utils.parse_config_file(this_dir)
+	component_params = component_utils.parse_config_file(this_dir, 'COMPONENT_SPECIFIC')
 
-	# create a full path to the output directory for the featureCount's output and reset the parameter in the project parameters:
-	output_dir = os.path.join(project.parameters.get('output_location'), project.parameters.get('feature_counts_output_dir'))
-	project.parameters.reset_param('feature_counts_output_dir', output_dir)
+	# create a full path to the output directory for the featureCount's output:
+	output_dir = os.path.join(project.parameters.get('output_location'), component_params.get('feature_counts_output_dir'))
+	component_params['feature_counts_output_dir'] = output_dir
 
 	# create the final output directory, if possible
 	util_methods.create_directory(output_dir)
 
 	# start the counting:
-	execute_counting(project, util_methods)
+	execute_counting(project, component_params, util_methods)
 
 	# create the final, unnormalized count matrices for each set of BAM files
-	merged_count_files = create_count_matrices(project, util_methods)
+	merged_count_files = create_count_matrices(project, component_params, util_methods)
 	
-	# add to the project object:
-	project.count_matrices = merged_count_files
+	# add these common files to the project object (so that other components have access to them):
+	project.raw_count_matrices = merged_count_files
+
+	# create the ComponentOutput object and return it
+	return [component_utils.ComponentOutput(merged_count_files, component_params.get('header_msg'), component_params.get('display_format')),]
 
 
-def create_count_matrices(project, util_methods):
+def create_count_matrices(project, component_params, util_methods):
 	"""
 	In general, there are a set of countfiles for each sample, corresponding to each bamfile.  This method takes the countfile of each 'type' across all samples
 	and creates a count matrix such that the genes are in rows and the samples are in columns.  In the end, each 'type' of bamfile (e.g. primary, deduped) will have
@@ -56,7 +61,7 @@ def create_count_matrices(project, util_methods):
 	sample_names = sorted([s.sample_name for s in project.samples])
 	header_line = ['Gene'] + sample_names
 
-	file_groups = get_countfile_groupings(project, util_methods.case_insensitive_glob)
+	file_groups = get_countfile_groupings(project, component_params, util_methods.case_insensitive_glob)
 	
 	for file_group in file_groups:
 		files = sorted(file_group)
@@ -66,7 +71,7 @@ def create_count_matrices(project, util_methods):
 			read(matrix,f)	
 
 		matrix.insert(0, header_line)
-		outfilepath = os.path.join(os.path.dirname(files[0]), project.parameters.get('raw_count_matrix_file_prefix') + group_suffix)
+		outfilepath = os.path.join(os.path.dirname(files[0]), component_params.get('raw_count_matrix_file_prefix') + group_suffix)
 		merged_count_files.append(outfilepath)
 		with open(outfilepath, 'w') as outfile:
 			for row in matrix:
@@ -91,7 +96,7 @@ def read(matrix, filepath):
 
 
 
-def get_countfile_groupings(project, case_insensitive_glob):
+def get_countfile_groupings(project, component_params, case_insensitive_glob):
 	"""
 	This method aggregates all the countfiles generated from each 'type' of bam file and returns the full filepaths as a list of lists.  
 	That is, we may have multiple bam files for each sample (e.g. primary alignments, deduplicated, etc).
@@ -103,7 +108,7 @@ def get_countfile_groupings(project, case_insensitive_glob):
 	extensions = ['*' + os.path.basename(countfile).lstrip(s.sample_name) for countfile in s.countfiles]
 
 	# create full paths by appending the location of the directory for featureCounts output:
-	paths = [os.path.join(project.parameters.get('feature_counts_output_dir'), p) for p in extensions]
+	paths = [os.path.join(component_params.get('feature_counts_output_dir'), p) for p in extensions]
 
 	# get the full groups of the countfiles
 	file_groups = map(case_insensitive_glob, paths)
@@ -119,7 +124,7 @@ def get_countfile_groupings(project, case_insensitive_glob):
 
 
 
-def execute_counting(project, util_methods):
+def execute_counting(project, component_params, util_methods):
 	"""
 	Creates the calls and executes the system calls for running featureCounts
 	"""
@@ -127,7 +132,7 @@ def execute_counting(project, util_methods):
 	
 	# default options, as a list of tuples:
 	default_options = [('-a', project.parameters.get('gtf')),('-t', 'exon'),('-g', 'gene_name')]
-	base_command = project.parameters.get('feature_counts') + ' ' + ' '.join(map(lambda x: ' '.join(x), default_options))
+	base_command = component_params.get('feature_counts') + ' ' + ' '.join(map(lambda x: ' '.join(x), default_options))
 
 	# if a paired experiment, count the fragments, not the single reads
 	if project.parameters.get('paired_alignment'):
@@ -137,8 +142,8 @@ def execute_counting(project, util_methods):
 		countfiles = []
 		for bamfile in sample.bamfiles:
 			if os.path.isfile(bamfile):
-				output_name = util_methods.case_insensitive_rstrip(os.path.basename(bamfile), 'bam') + project.parameters.get('feature_counts_file_extension')
-				output_path = os.path.join(project.parameters.get('feature_counts_output_dir'), output_name)
+				output_name = util_methods.case_insensitive_rstrip(os.path.basename(bamfile), 'bam') + component_params.get('feature_counts_file_extension')
+				output_path = os.path.join(component_params.get('feature_counts_output_dir'), output_name)
 				command = base_command + ' -o ' + output_path + ' ' + bamfile
 
 				logging.info('Calling featureCounts with: ')
