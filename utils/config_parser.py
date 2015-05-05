@@ -26,6 +26,9 @@ def create_dict(parser, selected_section):
 
 
 def read_config(config_filepath, section = ''):
+	"""
+	Returns a dictionary of config params and values
+	"""
 	try:
 		logging.info("Attempting to parse configuration file at %s" % config_filepath)
 		with open(config_filepath, 'r') as cfg_fileobj:

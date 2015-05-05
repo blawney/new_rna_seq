@@ -1,5 +1,8 @@
 import jinja2
+import shutil
 import os
+import sys
+import imp
 
 class EmptySectionException(Exception):
 	pass
@@ -36,6 +39,20 @@ class Section(object):
 				raise InvalidDisplayException('Display type has not been implemented.')
 		else:
 			raise EmptySectionException('Attempting to populate an empty section.')
+
+
+def load_remote_module(module_name, location):
+	"""
+	Loads and returns the module given by 'module_name' that resides in the given location
+	"""
+	sys.path.append(location)
+	try:
+		fileobj, filename, description = imp.find_module(module_name, [location])
+		module = imp.load_module(module_name, fileobj, filename, description)
+		return module
+	except ImportError as ex:
+		logging.error('Could not import module %s at location %s' % (module_name, location))
+		raise ex
 
 
 def add_fastq(project, transformer):
@@ -83,24 +100,34 @@ def write_report(pipeline):
 	Main method for writing the output report.  Called with a Pipeline object.
 	"""
 	try:
-		this_directory = os.path.dirname(os.path.realpath(__file__))
-		parse_config_file(pipeline.project, this_directory)
-
 		# for shorter referencing
 		parameters = pipeling.project.parameters
 
-		# edit the config variables to get the full paths
-		parameters.prepend_param('completed_html_report', parameters.get('output_location'), os.path.join)
+		# get the location of the utils directory:
+		utils_dir = parameters.get('utils_dir')
+
+		# load the parser and the util_methods modules:
+		config_parser = load_remote_module('config_parser', utils_dir)
+		util_methods = load_remote_module('util_methods', utils_dir)
+
+		# read the config file for this report generator:
+		this_directory = os.path.dirname(os.path.realpath(__file__))
+		config_filepath = util_methods.locate_config(this_directory)
+		report_parameters = config_parser.read_config(config_filepath)
+
+		# create the report directory:
+		report_directory = os.path.join(parameters.get('output_location'), report_parameters.get('report_directory'))
+		util_methods.create_directory(report_directory)
 
 		# load the template
 		env = jinja2.Environment(loader=jinja2.FileSystemLoader(this_directory))
-		template = env.get_template(parameters.get('template_html_file'))
+		template = env.get_template(report_parameters.get('template_html_file'))
 
 		# create the context.  This is a dictionary of key-value pairs that map to items in the template html file
 		context = {'section_list' : [], 'sections' : []}
 
 		# create a method which will transform links to relative paths
-		transformer = lambda x: os.path.relpath(x, parameters.get('output_location'))
+		transformer = lambda x: os.path.relpath(x, report_directory)
 
 		if not parameters.get('skip_align'):
 			add_to_context(add_fastq(pipeline.project, transformer))
@@ -123,9 +150,17 @@ def write_report(pipeline):
 				section = Section(href, output.header_msg, contents)
 				add_to_context(tab_header, section)
 
-		completed_report_path = os.path.join( parameters('output_location'), parameters('completed_html_report'))
+		completed_report_path = os.path.join(report_directory, report_parameters('completed_html_report'))
 		with open(completed_report_path, 'w') as outfile:
 			outfile.write(template.render(context))
 
+		# move the lib files (javascript, css, etc)
+		destination = os.path.join(report_directory, report_parameters.get('libraries_directory'))
+		src = os.path.join(this_directory, report_parameters.get('libraries_directory'))
+		shutil.copytree(src, destination)
+
 	except Exception as ex:
 		raise ex
+
+
+

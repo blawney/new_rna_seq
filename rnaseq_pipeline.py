@@ -3,6 +3,7 @@ import os
 import sys
 import cmd_line_parser as cl_parser
 import pickle
+import report_generator.create_report as report_writer
 
 
 from utils.pipeline_builder import PipelineBuilder
@@ -44,6 +45,8 @@ if __name__ == "__main__":
 			configured_pipeline = builder.build()
 
 		configured_pipeline.run()
+
+		report_writer.write_report(configured_pipeline)
 
 	except Exception as ex:
 		logging.error("Exception thrown.  Message: %s", ex.message)
