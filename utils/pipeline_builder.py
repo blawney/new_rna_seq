@@ -186,8 +186,23 @@ class PipelineBuilder(object):
 					elif len(read_2_files) > 1:
 						raise MultipleFileFoundException('There was more than 1 fastq file marked with the suffix %s inside %s' % (self.builder_params.get('read_2_fastq_tag'),expected_directory))
 
+
+					# try to find fastQC files:
+					read_1_fastqc = glob.glob(os.path.join(expected_directory, '*' + self.builder_params.get('read_1_fastQC_tag'), self.builder_params.get('fastqc_report_file')))
+					read_2_fastqc = glob.glob(os.path.join(expected_directory, '*' + self.builder_params.get('read_2_fastQC_tag'), self.builder_params.get('fastqc_report_file')))
+					if len(read_1_fastqc) == 1:
+						new_sample.read_1_fastqc_report = read_1_fastqc
+					else:
+						new_sample.read_1_fastqc_report = None
+
+					if len(read_2_fastqc) == 1:
+						new_sample.read_2_fastqc_report = read_2_fastqc
+					else:
+						new_sample.read_2_fastqc_report = Noneqc
+
 					logging.info('Adding new sample:\n %s' % new_sample)
 					self.all_samples.append(new_sample)
+
 					
 				else:
 					logging.error('%s was not, in fact, a directory or the name scheme was incorrect.' % expected_directory)
