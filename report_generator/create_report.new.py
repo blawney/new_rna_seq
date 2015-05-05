@@ -38,36 +38,36 @@ class Section(object):
 			raise EmptySectionException('Attempting to populate an empty section.')
 
 
-def add_fastq(project):
+def add_fastq(project, transformer):
 	tab_header = Link("fastq_files","FastQ Files")
 	file_links = []
 	for sample in project.samples:
-		file_links.append(Link(sample.read_1_fastq, os.path.basename(sample.read_1_fastq)))
+		file_links.append(Link(transformer.get_relpath(sample.read_1_fastq), os.path.basename(sample.read_1_fastq)))
 		if project.parameters.get('paired_alignment'):
-			file_links.append(Link(sample.read_2_fastq, os.path.basename(sample.read_2_fastq)))
+			file_links.append(Link(transformer.get_relpath(sample.read_2_fastq), os.path.basename(sample.read_2_fastq)))
 	section = Section("fastq_files", "Sequence files in compressed format:", file_links)
 	return tab_header, section
 
 
-def add_bam(project):
+def add_bam(project, transformer):
 	tab_header = Link("bam_files","BAM Files")
 	file_links = []
 	for sample in project.samples:
 		for bamfile in sample.bamfiles:
-			file_links.append(Link(bamfile, os.path.basename(bamfile)))
+			file_links.append(Link(transformer.get_relpath(bamfile), os.path.basename(bamfile)))
 
 	section = Section("bam_files", "Binary sequence alignment (BAM) files:", file_links)
 	return tab_header, section
 
 
-def add_fastQC_reports(project):
+def add_fastQC_reports(project, transformer):
 	tab_header = Link("fastQC_files","FastQC Files")
 	subpanels = []
 	for sample in project.samples:
 		links = [sample.read_1_fastqc_report]
 		if project.parameters.get('paired_alignment'):
 			links.append(sample.read_2_fastqc_report)
-		subpanels += [Panel(os.path.basename(link), link, True) for link in links]
+		subpanels += [Panel(os.path.basename(link), transformer.get_relpath(link), True) for link in links]
 		
 	section = Section("fastQC_files", "Sequencing quality reports:", subpanels)
 	return tab_header, section
@@ -99,25 +99,28 @@ def write_report(pipeline):
 		# create the context.  This is a dictionary of key-value pairs that map to items in the template html file
 		context = {'section_list' : [], 'sections' : []}
 
+		# create a method which will transform links to relative paths
+		transformer = lambda x: os.path.relpath(x, parameters.get('output_location'))
+
 		if not parameters.get('skip_align'):
-			add_to_context(add_fastq(pipeline.project))
+			add_to_context(add_fastq(pipeline.project, transformer))
 			
-		add_to_context(add_bam(pipeline.project))
-		add_to_context(add_fastQC_reports(pipeline.project))
+		add_to_context(add_bam(pipeline.project, transformer))
+		add_to_context(add_fastQC_reports(pipeline.project, transformer))
 	
 		for component in pipeline.components:
 			for i, output in enumerate(component.outputs):
 				href = component.name + "_" + str(i)
 				tab_header = Link(href, output.nav_text)
 				if output.display_format == 'list':
-					contents = [Link(href, text) for text,href in output.files.items()]
+					contents = [Link(transformer.get_relpath(href), text) for text,href in output.files.items()]
 				elif output.display_format == 'collapse_panel_iframe':
-					contents = [Panel(text, href, True) for text,href in output.files.items()]
+					contents = [Panel(text, transformer.get_relpath(href), True) for text,href in output.files.items()]
 				elif output.display_format == 'collapse_panel':
-					contents = [Panel(text, href, False) for text,href in output.files.items()]
+					contents = [Panel(text, transformer.get_relpath(href), False) for text,href in output.files.items()]
 				else:
 					raise InvalidDisplayException('An invalid display type was specified.')
-				section = Section(href, output.header_msg, file_links)
+				section = Section(href, output.header_msg, contents)
 				add_to_context(tab_header, section)
 
 		completed_report_path = os.path.join( parameters('output_location'), parameters('completed_html_report'))
