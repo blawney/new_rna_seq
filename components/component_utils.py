@@ -41,6 +41,7 @@ class ComponentOutput(object):
 	def __init__(self, files, tab_title, header_msg, display_format):
 		self.files = files
 		self.header_msg = header_msg
+		self.nav_text = tab_title
 		if display_format in DISPLAY_FORMATS:
 			self.display_format = display_format
 		else:
