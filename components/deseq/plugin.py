@@ -25,8 +25,8 @@ def run(name, project):
 
 	# parse this module's config file
 	this_dir = os.path.dirname(os.path.realpath(__file__))
-	project.parameters.add(component_utils.parse_config_file(this_dir)
-	component_params = component_utils.parse_config_file(this_dir, 'COMPONENT_SPECIFIC')
+	project.parameters.add(component_utils.parse_config_file(this_dir))
+	component_params = component_utils.parse_config_file(project, this_dir, 'COMPONENT_SPECIFIC')
 
 	# create a full path to the output directory for the output:
 	output_dir = os.path.join(project.parameters.get('output_location'), component_params.get('deseq_output_dir'))
@@ -38,8 +38,8 @@ def run(name, project):
 	deseq_output_files, heatmap_files = call_deseq(project, component_params)
 
 	# create the ComponentOutput object and return it
-	c1 = component_utils.ComponentOutput(deseq_output_files, component_params.get('deseq_header_msg'), component_params.get('deseq_display_format'))
-	c2 = component_utils.ComponentOutput(heatmap_files, component_params.get('heatmap_header_msg'), component_params.get('heatmap_display_format'))
+	c1 = component_utils.ComponentOutput(deseq_output_files, component_params.get('deseq_tab_title'), component_params.get('deseq_header_msg'), component_params.get('deseq_display_format'))
+	c2 = component_utils.ComponentOutput(heatmap_files, component_params.get('heatmap_tab_title'), component_params.get('heatmap_header_msg'), component_params.get('heatmap_display_format'))
 	return [ c1, c2 ]
 
 

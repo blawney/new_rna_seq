@@ -1,6 +1,14 @@
 import jinja2
 import os
 
+class EmptySectionException(Exception):
+	pass
+
+
+class InvalidDisplayException(Exception):
+	pass
+
+
 class Link(object):
 	def __init__(self, href, text):
 		self.href = href
@@ -18,8 +26,16 @@ class Section(object):
 	def __init__(self, href, header_message, contents):
 		self.href = href
 		self.header_message = header_message
-		self.contents = contents
-
+		if len(contents) > 0:
+			self.contents = contents
+			if type(contents[0]) is Panel:
+				self.panel_section = True
+			elif type(contents[0]) is Link:
+				self.link_section = True
+			else:
+				raise InvalidDisplayException('Display type has not been implemented.')
+		else:
+			raise EmptySectionException('Attempting to populate an empty section.')
 
 
 def add_fastq(project):
@@ -58,7 +74,8 @@ def add_fastQC_reports(project):
 
 
 def add_to_context(context, tab, section):
-	pass
+	context['section_list'].append(tab)
+	context['sections'].append(section)
 
 
 def write_report(pipeline):
@@ -73,19 +90,16 @@ def write_report(pipeline):
 		parameters = pipeling.project.parameters
 
 		# edit the config variables to get the full paths
-		parameters.prepend_param('completed_html_report', pipeline.project.parameters.get('output_location'), os.path.join)
+		parameters.prepend_param('completed_html_report', parameters.get('output_location'), os.path.join)
 
 		# load the template
 		env = jinja2.Environment(loader=jinja2.FileSystemLoader(this_directory))
 		template = env.get_template(parameters.get('template_html_file'))
 
 		# create the context.  This is a dictionary of key-value pairs that map to items in the template html file
-		context = {}
-		section_list = []
-		simple_link_sections = []
-		panel_sections = []
+		context = {'section_list' : [], 'sections' : []}
 
-		if not pipeline.project.parameters.get('skip_align'):
+		if not parameters.get('skip_align'):
 			add_to_context(add_fastq(pipeline.project))
 			
 		add_to_context(add_bam(pipeline.project))
@@ -102,11 +116,11 @@ def write_report(pipeline):
 				elif output.display_format == 'collapse_panel':
 					contents = [Panel(text, href, False) for text,href in output.files.items()]
 				else:
-					raise Exception('An invalid display type was given.')
+					raise InvalidDisplayException('An invalid display type was specified.')
 				section = Section(href, output.header_msg, file_links)
 				add_to_context(tab_header, section)
 
-		completed_report_path = os.path.join( pipeline.project.parameters('output_location'), pipeline.project.parameters('completed_html_report'))
+		completed_report_path = os.path.join( parameters('output_location'), parameters('completed_html_report'))
 		with open(completed_report_path, 'w') as outfile:
 			outfile.write(template.render(context))
 

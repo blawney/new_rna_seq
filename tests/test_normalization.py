@@ -26,8 +26,9 @@ class TestNormalizationComponent(unittest.TestCase, ComponentTester):
 
 	def test_missing_count_matrix_files_raises_exception(self):
 		project = Project()
+		component_params = Params()
 		with self.assertRaises(self.module.NoCountMatricesException):
-			self.module.normalize(project)
+			self.module.normalize(project, component_params)
 
 
 	def test_correct_calls_are_made(self):
@@ -37,20 +38,21 @@ class TestNormalizationComponent(unittest.TestCase, ComponentTester):
 		"""
 		self.module.call_script = mock.Mock()
 		project = Project()
-		project.count_matrices = ['/path/to/raw_counts/raw_count_matrix.primary.counts',
+		project.raw_count_matrices = ['/path/to/raw_counts/raw_count_matrix.primary.counts',
 					'/path/to/raw_counts/raw_count_matrix.primary.dedup.counts']
-		params = Params()
-		params.add(raw_count_matrix_file_prefix = 'raw_count_matrix')
-		params.add(normalized_counts_file_prefix = 'normalized_count_matrix')
-		params.add(normalized_counts_output_dir = '/path/to/final/norm_counts_dir')
-		params.add(normalization_script = 'normalize.R')
-		params.add(sample_annotation_file = '/path/to/samples.txt')
-		project.add_parameters(params)
+		project_params = Params()
+		component_params = Params()
+		project_params.add(raw_count_matrix_file_prefix = 'raw_count_matrix')
+		component_params.add(normalized_counts_file_prefix = 'normalized_count_matrix')
+		component_params.add(normalized_counts_output_dir = '/path/to/final/norm_counts_dir')
+		component_params.add(normalization_script = 'normalize.R')
+		project_params.add(sample_annotation_file = '/path/to/samples.txt')
+		project.add_parameters(project_params)
 
 		m = mock.MagicMock(side_effect = [True, True])
 		path = self.module.os.path
 		with mock.patch.object(path, 'isfile', m):
-			self.module.normalize(project)
+			self.module.normalize(project, component_params)
 			calls = [mock.call('normalize.R', '/path/to/raw_counts/raw_count_matrix.primary.counts', 
 					'/path/to/final/norm_counts_dir/normalized_count_matrix.primary.counts', '/path/to/samples.txt' ), 
 				mock.call('normalize.R', '/path/to/raw_counts/raw_count_matrix.primary.dedup.counts', 
@@ -64,21 +66,22 @@ class TestNormalizationComponent(unittest.TestCase, ComponentTester):
 		"""
 		self.module.call_script = mock.Mock()
 		project = Project()
-		project.count_matrices = ['/path/to/raw_counts/raw_count_matrix.primary.counts',
+		project.raw_count_matrices = ['/path/to/raw_counts/raw_count_matrix.primary.counts',
 					'/path/to/raw_counts/raw_count_matrix.primary.dedup.counts']
-		params = Params()
-		params.add(raw_count_matrix_file_prefix = 'raw_count_matrix')
-		params.add(normalized_counts_file_prefix = 'normalized_count_matrix')
-		params.add(normalized_counts_output_dir = '/path/to/final/norm_counts_dir')
-		params.add(normalization_script = 'normalize.R')
-		params.add(sample_annotation_file = '/path/to/samples.txt')
-		project.add_parameters(params)
+		project_params = Params()
+		component_params = Params()
+		project_params.add(raw_count_matrix_file_prefix = 'raw_count_matrix')
+		component_params.add(normalized_counts_file_prefix = 'normalized_count_matrix')
+		component_params.add(normalized_counts_output_dir = '/path/to/final/norm_counts_dir')
+		component_params.add(normalization_script = 'normalize.R')
+		project_params.add(sample_annotation_file = '/path/to/samples.txt')
+		project.add_parameters(project_params)
 
 		m = mock.MagicMock(side_effect = [True, False])
 		path = self.module.os.path
 		with mock.patch.object(path, 'isfile', m):
 			with self.assertRaises(self.module.MissingCountMatrixFileException):
-				self.module.normalize(project)
+				self.module.normalize(project, component_params)
 			calls = [mock.call('normalize.R', '/path/to/raw_counts/raw_count_matrix.primary.counts', 
 					'/path/to/final/norm_counts_dir/normalized_count_matrix.primary.counts', '/path/to/samples.txt' )]
 			self.module.call_script.assert_has_calls(calls)

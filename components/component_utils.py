@@ -15,7 +15,7 @@ def load_remote_module(module_name, location):
 		raise ex
 
 
-def parse_config_file(project, component_dir, section =  'DEFAULT'):
+def parse_config_file(project, component_dir, section = 'DEFAULT'):
 	"""
 	Parses the passed component's configuration file and adds the constants to the project parameters.
 	"""
@@ -28,6 +28,7 @@ def parse_config_file(project, component_dir, section =  'DEFAULT'):
 	util_methods = load_remote_module('util_methods', utils_dir)
 
 	config_filepath = util_methods.locate_config(component_dir)
+
 	return config_parser.read_config(config_filepath, section)
 
 
@@ -37,7 +38,7 @@ class InvalidDisplayOptionException(Exception):
 
 class ComponentOutput(object):
 	DISPLAY_FORMATS = [ 'list', 'collapse_panel_iframe', 'collapse_panel' ]
-	def __init__(self, files, header_msg, display_format):
+	def __init__(self, files, tab_title, header_msg, display_format):
 		self.files = files
 		self.header_msg = header_msg
 		if display_format in DISPLAY_FORMATS:

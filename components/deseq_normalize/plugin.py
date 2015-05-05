@@ -25,8 +25,8 @@ def run(project):
 
 	# parse this module's config file
 	this_dir = os.path.dirname(os.path.realpath(__file__))
-	project.parameters.add(component_utils.parse_config_file(this_dir)
-	component_params = component_utils.parse_config_file(this_dir, 'COMPONENT_SPECIFIC')
+	project.parameters.add(component_utils.parse_config_file(this_dir))
+	component_params = component_utils.parse_config_file(project, this_dir, 'COMPONENT_SPECIFIC')
 
 	# create a full path to the output directory for the output and reset the parameter in the project parameters:
 	output_dir = os.path.join(project.parameters.get('output_location'), component_params.get('normalized_counts_output_dir'))
@@ -39,7 +39,7 @@ def run(project):
 	output_files = normalize(project, component_params)
 	
 	# create the ComponentOutput object and return it
-	return [component_utils.ComponentOutput(output_files, component_params.get('header_msg'), component_params.get('display_format')),]
+	return [component_utils.ComponentOutput(output_files, component_params.get('tab_title'), component_params.get('header_msg'), component_params.get('display_format')),]
 
 
 

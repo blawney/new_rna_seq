@@ -26,8 +26,9 @@ class TestDeseqComponent(unittest.TestCase, ComponentTester):
 
 	def test_missing_count_matrix_files_raises_exception(self):
 		project = Project()
+		cp = Params()
 		with self.assertRaises(self.module.NoCountMatricesException):
-			self.module.call_deseq(project)
+			self.module.call_deseq(project, cp)
 
 
 	def test_correct_calls_are_made(self):
@@ -37,20 +38,21 @@ class TestDeseqComponent(unittest.TestCase, ComponentTester):
 		"""
 		self.module.call_script = mock.Mock()
 		project = Project()
-		project.count_matrices = ['/path/to/raw_counts/raw_count_matrix.primary.counts',
+		project.raw_count_matrices = ['/path/to/raw_counts/raw_count_matrix.primary.counts',
 					'/path/to/raw_counts/raw_count_matrix.primary.dedup.counts']
-		params = Params()
-		params.add(raw_count_matrix_file_prefix = 'raw_count_matrix')
-		params.add(feature_counts_file_extension = 'counts')
-		params.add(deseq_output_dir = '/path/to/final/deseq_dir')
-		params.add(deseq_script = 'deseq_original.R')
-		params.add(sample_annotation_file = '/path/to/samples.txt')
-		params.add( deseq_output_tag ='deseq')
-		params.add(deseq_contrast_flag = '_vs_')
-		params.add(number_of_genes_for_heatmap = '30')
-		params.add(heatmap_file_tag = 'heatmap.png')
+		project_params = Params()
+		component_params = Params()
+		project_params.add(raw_count_matrix_file_prefix = 'raw_count_matrix')
+		project_params.add(feature_counts_file_extension = 'counts')
+		component_params.add(deseq_output_dir = '/path/to/final/deseq_dir')
+		component_params.add(deseq_script = 'deseq_original.R')
+		project_params.add(sample_annotation_file = '/path/to/samples.txt')
+		component_params.add( deseq_output_tag ='deseq')
+		component_params.add(deseq_contrast_flag = '_vs_')
+		component_params.add(number_of_genes_for_heatmap = '30')
+		component_params.add(heatmap_file_tag = 'heatmap.png')
 
-		project.add_parameters(params)
+		project.add_parameters(project_params)
 		project.contrasts = [('X', 'Y'),('X', 'Z')]
 
 		# construct the expected call strings:
@@ -62,7 +64,7 @@ class TestDeseqComponent(unittest.TestCase, ComponentTester):
 		m = mock.MagicMock(side_effect = [True, True])
 		path = self.module.os.path
 		with mock.patch.object(path, 'isfile', m):
-			self.module.call_deseq(project)
+			self.module.call_deseq(project, component_params)
 			calls = [mock.call('deseq_original.R', call_1), mock.call('deseq_original.R', call_2), mock.call('deseq_original.R', call_3), mock.call('deseq_original.R', call_4)]
 			self.module.call_script.assert_has_calls(calls)
 
@@ -74,20 +76,22 @@ class TestDeseqComponent(unittest.TestCase, ComponentTester):
 		"""
 		self.module.call_script = mock.Mock()
 		project = Project()
-		project.count_matrices = ['/path/to/raw_counts/raw_count_matrix.primary.counts',
+		project.raw_count_matrices = ['/path/to/raw_counts/raw_count_matrix.primary.counts',
 					'/path/to/raw_counts/raw_count_matrix.primary.dedup.counts']
-		params = Params()
-		params.add(raw_count_matrix_file_prefix = 'raw_count_matrix')
-		params.add(feature_counts_file_extension = 'counts')
-		params.add(deseq_output_dir = '/path/to/final/deseq_dir')
-		params.add(deseq_script = 'deseq_original.R')
-		params.add(sample_annotation_file = '/path/to/samples.txt')
-		params.add( deseq_output_tag ='deseq')
-		params.add(deseq_contrast_flag = '_vs_')
-		params.add(number_of_genes_for_heatmap = '30')
-		params.add(heatmap_file_tag = 'heatmap.png')
 
-		project.add_parameters(params)
+		project_params = Params()
+		component_params = Params()
+		project_params.add(raw_count_matrix_file_prefix = 'raw_count_matrix')
+		project_params.add(feature_counts_file_extension = 'counts')
+		component_params.add(deseq_output_dir = '/path/to/final/deseq_dir')
+		component_params.add(deseq_script = 'deseq_original.R')
+		project_params.add(sample_annotation_file = '/path/to/samples.txt')
+		component_params.add( deseq_output_tag ='deseq')
+		component_params.add(deseq_contrast_flag = '_vs_')
+		component_params.add(number_of_genes_for_heatmap = '30')
+		component_params.add(heatmap_file_tag = 'heatmap.png')
+
+		project.add_parameters(project_params)
 		project.contrasts = [('X', 'Y'),('X', 'Z')]
 
 		# construct the expected call strings:
@@ -98,7 +102,7 @@ class TestDeseqComponent(unittest.TestCase, ComponentTester):
 		path = self.module.os.path
 		with mock.patch.object(path, 'isfile', m):
 			with self.assertRaises(self.module.MissingCountMatrixFileException):
-				self.module.call_deseq(project)
+				self.module.call_deseq(project, component_params)
 			calls = [mock.call('deseq_original.R', call_1), mock.call('deseq_original.R', call_2)]
 			self.module.call_script.assert_has_calls(calls)
 

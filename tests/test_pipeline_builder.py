@@ -194,6 +194,9 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
 		mock_pipeline_params.add(read_1_fastq_tag = '_R1_001.fastq.gz')
 		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
+		mock_pipeline_params.add(read_1_fastQC_tag = '_R1_001_fastqc')
+		mock_pipeline_params.add(read_2_fastQC_tag = '_R2_001_fastqc')
+		mock_pipeline_params.add(fastqc_report_file = 'fastqc_report.html')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
 		mock_pipeline_params.add(target_bam = 'sort.bam')
@@ -201,7 +204,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		p.builder_params = mock_pipeline_params
 
 		# mock there being only R1 fastq files:
-		glob_return = [['A_R1_001.fastq.gz'],[],['B_R1_001.fastq.gz'],[], ['C_R1_001.fastq.gz'],[]]
+		glob_return = [['A_R1_001.fastq.gz'],[],[],[],['B_R1_001.fastq.gz'],[],[],[], ['C_R1_001.fastq.gz'],[],[],[]]
 		mock_glob.glob.side_effect = glob_return
 
 		# mock the missing config file: 
@@ -210,7 +213,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		p._PipelineBuilder__check_and_create_samples()
 		for i,s in enumerate(p.all_samples):
 			self.assertTrue(s.sample_name == pairings[i][0])
-			self.assertTrue(s.read_1_fastq == glob_return[i*2][0])
+			self.assertTrue(s.read_1_fastq == glob_return[i*4][0])
 			self.assertTrue(s.read_2_fastq == None)
 			self.assertTrue(s.bamfiles == [])
 
@@ -237,6 +240,9 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
 		mock_pipeline_params.add(read_1_fastq_tag = '_R1_001.fastq.gz')
 		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
+		mock_pipeline_params.add(read_1_fastQC_tag = '_R1_001_fastqc')
+		mock_pipeline_params.add(read_2_fastQC_tag = '_R2_001_fastqc')
+		mock_pipeline_params.add(fastqc_report_file = 'fastqc_report.html')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
 		mock_pipeline_params.add(target_bam = 'sort.bam')
@@ -244,7 +250,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		p.builder_params = mock_pipeline_params
 
 		# mock unique R1 and R2 fastq files:
-		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],['B_R1_001.fastq.gz'],['B_R2_001.fastq.gz'], ['C_R1_001.fastq.gz'],['C_R2_001.fastq.gz']]
+		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],[],[],['B_R1_001.fastq.gz'],['B_R2_001.fastq.gz'],[],[], ['C_R1_001.fastq.gz'],['C_R2_001.fastq.gz'],[],[]]
 		mock_glob.glob.side_effect = glob_return
 
 		# mock the missing config file: 
@@ -253,8 +259,8 @@ class TestPipelineBuilder(unittest.TestCase):
 		p._PipelineBuilder__check_and_create_samples()
 		for i,s in enumerate(p.all_samples):
 			self.assertTrue(s.sample_name == pairings[i][0])
-			self.assertTrue(s.read_1_fastq == glob_return[i*2][0])
-			self.assertTrue(s.read_2_fastq == glob_return[i*2+1][0])
+			self.assertTrue(s.read_1_fastq == glob_return[i*4][0])
+			self.assertTrue(s.read_2_fastq == glob_return[i*4+1][0])
 			self.assertTrue(s.bamfiles == [])
 
 
@@ -277,6 +283,9 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
 		mock_pipeline_params.add(read_1_fastq_tag = '_R1_001.fastq.gz')
 		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
+		mock_pipeline_params.add(read_1_fastQC_tag = '_R1_001_fastqc')
+		mock_pipeline_params.add(read_2_fastQC_tag = '_R2_001_fastqc')
+		mock_pipeline_params.add(fastqc_report_file = 'fastqc_report.html')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
 		mock_pipeline_params.add(target_bam = 'sort.bam')
@@ -284,7 +293,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		p.builder_params = mock_pipeline_params
 
 		# mock there being only R1 fastq files for one of the samples:
-		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],['B_R1_001.fastq.gz'],[], ['C_R1_001.fastq.gz'],['C_R2_001.fastq.gz']]
+		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],[],[],['B_R1_001.fastq.gz'],[],[],[], ['C_R1_001.fastq.gz'],['C_R2_001.fastq.gz'],[],[]]
 		mock_glob.glob.side_effect = glob_return
 
 		# mock the missing config file: 
@@ -313,6 +322,9 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
 		mock_pipeline_params.add(read_1_fastq_tag = '_R1_001.fastq.gz')
 		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
+		mock_pipeline_params.add(read_1_fastQC_tag = '_R1_001_fastqc')
+		mock_pipeline_params.add(read_2_fastQC_tag = '_R2_001_fastqc')
+		mock_pipeline_params.add(fastqc_report_file = 'fastqc_report.html')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
 		mock_pipeline_params.add(paired_alignment = True)
@@ -321,7 +333,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		p.builder_params = mock_pipeline_params
 
 		# mock there being only R1 fastq files for all of the samples:
-		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],['B_R1_001.fastq.gz'],[], ['C_R1_001.fastq.gz'],[]]
+		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],[],[],['B_R1_001.fastq.gz'],[],[],[],['C_R1_001.fastq.gz'],[],[],[]]
 		mock_glob.glob.side_effect = glob_return
 
 		# mock the missing config file: 
@@ -351,6 +363,9 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
 		mock_pipeline_params.add(read_1_fastq_tag = '_R1_001.fastq.gz')
 		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
+		mock_pipeline_params.add(read_1_fastQC_tag = '_R1_001_fastqc')
+		mock_pipeline_params.add(read_2_fastQC_tag = '_R2_001_fastqc')
+		mock_pipeline_params.add(fastqc_report_file = 'fastqc_report.html')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
 		mock_pipeline_params.add(paired_alignment = True)
@@ -359,7 +374,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		p.builder_params = mock_pipeline_params
 
 		# mock there being only R1 fastq files for all of the samples:
-		glob_return = [['A_R1_001.fastq.gz'],[],['B_R1_001.fastq.gz'],[], ['C_R1_001.fastq.gz'],[]]
+		glob_return = [['A_R1_001.fastq.gz'],[],[],[],['B_R1_001.fastq.gz'],[],[],[], ['C_R1_001.fastq.gz'],[],[],[]]
 		mock_glob.glob.side_effect = glob_return
 
 		# mock the missing config file: 
@@ -388,6 +403,9 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
 		mock_pipeline_params.add(read_1_fastq_tag = '_R1_001.fastq.gz')
 		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
+		mock_pipeline_params.add(read_1_fastQC_tag = '_R1_001_fastqc')
+		mock_pipeline_params.add(read_2_fastQC_tag = '_R2_001_fastqc')
+		mock_pipeline_params.add(fastqc_report_file = 'fastqc_report.html')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
 		mock_pipeline_params.add(paired_alignment = False)
@@ -396,7 +414,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		p.builder_params = mock_pipeline_params
 
 		# mock there being both R1 and R2 fastq files for all of the samples:
-		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],['B_R1_001.fastq.gz'],['B_R2_001.fastq.gz'], ['C_R1_001.fastq.gz'],['C_R2_001.fastq.gz']]
+		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],[],[],['B_R1_001.fastq.gz'],['B_R2_001.fastq.gz'],[],[], ['C_R1_001.fastq.gz'],['C_R2_001.fastq.gz'],[],[]]
 		mock_glob.glob.side_effect = glob_return
 
 		# mock the missing config file: 
@@ -428,6 +446,9 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(project_directory = '/path/to/project_dir')
 		mock_pipeline_params.add(read_1_fastq_tag = '_R1_001.fastq.gz')
 		mock_pipeline_params.add(read_2_fastq_tag = '_R2_001.fastq.gz')
+		mock_pipeline_params.add(read_1_fastQC_tag = '_R1_001_fastqc')
+		mock_pipeline_params.add(read_2_fastQC_tag = '_R2_001_fastqc')
+		mock_pipeline_params.add(fastqc_report_file = 'fastqc_report.html')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
 		mock_pipeline_params.add(target_bam = 'sort.bam')
@@ -439,14 +460,14 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_os.path.isdir.return_value = True
 
 		# mock there being only R1 fastq files, and have one of the entries return >1 in the list:
-		glob_return = [['A_R1_001.fastq.gz'],[],['B_R1_001.fastq.gz', 'B_AT_R1_001.fastq.gz'],[], ['C_R1_001.fastq.gz'],[]]
+		glob_return = [['A_R1_001.fastq.gz'],[],[],[],['B_R1_001.fastq.gz', 'B_AT_R1_001.fastq.gz'],[],[],[], ['C_R1_001.fastq.gz'],[],[],[]]
 		mock_glob.glob.side_effect = glob_return
 
 		with self.assertRaises(MultipleFileFoundException):
 			p._PipelineBuilder__check_and_create_samples()
 
 		# mock there being both R1 and R2 fastq files (And we want paired alignment), and have one of the R2 entries return >1 in the list:
-		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],['B_R1_001.fastq.gz'],['B_R2_001.fastq.gz'], ['C_R1_001.fastq.gz'],['C_R2_001.fastq.gz', 'C_AT_R2_001.fastq.gz']]
+		glob_return = [['A_R1_001.fastq.gz'],['A_R2_001.fastq.gz'],[],[],['B_R1_001.fastq.gz'],['B_R2_001.fastq.gz'],[],[], ['C_R1_001.fastq.gz'],['C_R2_001.fastq.gz', 'C_AT_R2_001.fastq.gz'],[],[]]
 		mock_glob.glob.side_effect = glob_return
 
 		with self.assertRaises(MultipleFileFoundException):

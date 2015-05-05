@@ -50,10 +50,11 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		self.module.subprocess.PIPE = ''
 
 		p = Params()
+		cp = Params()
 		p.add(gtf = '/path/to/GTF/mock.gtf')
-		p.add(feature_counts = '/path/to/bin/featureCounts')
-		p.add(feature_counts_file_extension = 'counts')
-		p.add(feature_counts_output_dir = '/path/to/final/featureCounts')
+		cp.add(feature_counts = '/path/to/bin/featureCounts')
+		cp.add(feature_counts_file_extension = 'counts')
+		cp.add(feature_counts_output_dir = '/path/to/final/featureCounts')
 		p.add(paired_alignment = True)
 		
 		s1 = Sample('A', 'X')
@@ -66,7 +67,7 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		m = mock.MagicMock(side_effect = [True, True, True])
 		path = self.module.os.path
 		with mock.patch.object(path, 'isfile', m):
-			self.module.execute_counting(project, util_methods)
+			self.module.execute_counting(project, cp, util_methods)
 
 			calls = [mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -p -o /path/to/final/featureCounts/A.counts /path/to/bamdir/A.bam', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE),
 				mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -p -o /path/to/final/featureCounts/A.primary.counts /path/to/bamdir/A.primary.bam', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE),
@@ -93,10 +94,11 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		self.module.subprocess.PIPE = ''
 		
 		p = Params()
+		cp = Params()
 		p.add(gtf = '/path/to/GTF/mock.gtf')
-		p.add(feature_counts = '/path/to/bin/featureCounts')
-		p.add(feature_counts_file_extension = 'counts')
-		p.add(feature_counts_output_dir = '/path/to/final/featureCounts')
+		cp.add(feature_counts = '/path/to/bin/featureCounts')
+		cp.add(feature_counts_file_extension = 'counts')
+		cp.add(feature_counts_output_dir = '/path/to/final/featureCounts')
 		p.add(paired_alignment = False)
 		
 		s1 = Sample('A', 'X')
@@ -109,7 +111,7 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		m = mock.MagicMock(side_effect = [True, True, True])
 		path = self.module.os.path
 		with mock.patch.object(path, 'isfile', m):
-			self.module.execute_counting(project, util_methods)
+			self.module.execute_counting(project, cp, util_methods)
 
 			calls = [mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -o /path/to/final/featureCounts/A.counts /path/to/bamdir/A.bam', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE),
 				mock.call('/path/to/bin/featureCounts -a /path/to/GTF/mock.gtf -t exon -g gene_name -o /path/to/final/featureCounts/A.primary.counts /path/to/bamdir/A.primary.bam', shell=True, stderr=self.module.subprocess.STDOUT, stdout=self.module.subprocess.PIPE),
@@ -133,7 +135,8 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		mock_case_insensitive_glob = mock.Mock()
 
 		p = Params()
-		p.add(feature_counts_output_dir = '/path/to/final/featureCounts')
+		cp = Params()
+		cp.add(feature_counts_output_dir = '/path/to/final/featureCounts')
 
 		s1 = Sample('A', 'X')
 		s1.countfiles = ['/path/to/final/featureCounts/A.counts', '/path/to/final/featureCounts/A.primary.counts', '/path/to/final/featureCounts/A.primary.dedup.counts']
@@ -151,7 +154,7 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 									['/path/to/final/featureCounts/A.primary.dedup.counts', '/path/to/final/featureCounts/B.primary.dedup.counts', '/path/to/final/featureCounts/C.primary.dedup.counts']] 
 		
 
-		result = self.module.get_countfile_groupings(project, mock_case_insensitive_glob)
+		result = self.module.get_countfile_groupings(project, cp, mock_case_insensitive_glob)
 		
 		calls = [mock.call('/path/to/final/featureCounts/*.counts'), mock.call('/path/to/final/featureCounts/*.primary.counts'), mock.call('/path/to/final/featureCounts/*.primary.dedup.counts')]
 		mock_case_insensitive_glob.assert_has_calls(calls)
@@ -167,7 +170,8 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		"""
 
 		p = Params()
-		p.add(feature_counts_output_dir = '/path/to/final/featureCounts')
+		cp = Params()
+		cp.add(feature_counts_output_dir = '/path/to/final/featureCounts')
 
 		s1 = Sample('A', 'X')
 		s1.countfiles = ['/path/to/final/featureCounts/A.counts', '/path/to/final/featureCounts/A.primary.counts', '/path/to/final/featureCounts/A.primary.dedup.counts']
@@ -186,7 +190,7 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 									['/path/to/final/featureCounts/A.primary.counts', '/path/to/final/featureCounts/C.primary.counts'],
 									['/path/to/final/featureCounts/A.primary.dedup.counts', '/path/to/final/featureCounts/B.primary.dedup.counts', '/path/to/final/featureCounts/C.primary.dedup.counts']] 
 		with self.assertRaises(self.module.CountfileQuantityException):
-			result = self.module.get_countfile_groupings(project, mock_case_insensitive_glob)
+			result = self.module.get_countfile_groupings(project, cp, mock_case_insensitive_glob)
 
 
 
@@ -248,6 +252,8 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 
 		p = Params()
 		p.add(raw_count_matrix_file_prefix = 'merged_counts')
+		cp = Params()
+		cp.add(raw_count_matrix_file_prefix = 'merged_counts')
 
 		s1 = Sample('A', 'X')
 		s1.countfiles = ['/path/to/final/featureCounts/A.primary.counts', '/path/to/final/featureCounts/A.counts', '/path/to/final/featureCounts/A.primary.dedup.counts']
@@ -262,7 +268,7 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		
 		m = mock.mock_open()
 		with mock.patch.object(__builtin__, 'open', m):
-			self.module.create_count_matrices(project, mock.Mock())
+			self.module.create_count_matrices(project, cp, mock.Mock())
 			m.assert_any_call('/path/to/final/featureCounts/merged_counts.counts', 'w')
 			m.assert_any_call('/path/to/final/featureCounts/merged_counts.primary.counts', 'w')
 			m.assert_any_call('/path/to/final/featureCounts/merged_counts.primary.dedup.counts', 'w')
@@ -281,10 +287,11 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		self.module.subprocess.Popen.return_value = mock_process
 
 		p = Params()
+		cp = Params()
 		p.add(gtf = '/path/to/GTF/mock.gtf')
-		p.add(feature_counts = '/path/to/bin/featureCounts')
-		p.add(feature_counts_file_extension = 'counts')
-		p.add(feature_counts_output_dir = '/path/to/final/featureCounts')
+		cp.add(feature_counts = '/path/to/bin/featureCounts')
+		cp.add(feature_counts_file_extension = 'counts')
+		cp.add(feature_counts_output_dir = '/path/to/final/featureCounts')
 		p.add(paired_alignment = False)
 		
 		s1 = Sample('A', 'X')
@@ -300,7 +307,7 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		path = self.module.os.path
 		with mock.patch.object(path, 'isfile', m):
 			with self.assertRaises(self.module.MissingBamFileException):
-				self.module.execute_counting(project, util_methods)
+				self.module.execute_counting(project, cp, util_methods)
 
 
 

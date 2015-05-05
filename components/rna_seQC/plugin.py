@@ -24,8 +24,8 @@ def run(name, project):
 
 	# parse this module's config file
 	this_dir = os.path.dirname(os.path.realpath(__file__))
-	project.parameters.add(component_utils.parse_config_file(this_dir)
-	component_params = component_utils.parse_config_file(this_dir, 'COMPONENT_SPECIFIC')
+	project.parameters.add(component_utils.parse_config_file(this_dir))
+	component_params = component_utils.parse_config_file(project, this_dir, 'COMPONENT_SPECIFIC')
 
 	# create a full path to the output directory for rnaseQC's output:
 	output_dir = os.path.join(project.parameters.get('output_location'), component_params.get('rnaseqc_output_dir'))
@@ -36,7 +36,7 @@ def run(name, project):
 	# run the QC processes:
 	reports = run_qc(project, component_params, util_methods)
 
-	return [component_utils.ComponentOutput(reports, component_params.get('header_msg'), component_params.get('display_format')),]
+	return [component_utils.ComponentOutput(reports, component_params.get('tab_title'), component_params.get('header_msg'), component_params.get('display_format')),]
 
 
 def run_qc(project, component_params, util_methods):

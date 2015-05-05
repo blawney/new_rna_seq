@@ -198,7 +198,7 @@ class PipelineBuilder(object):
 					if len(read_2_fastqc) == 1:
 						new_sample.read_2_fastqc_report = read_2_fastqc
 					else:
-						new_sample.read_2_fastqc_report = Noneqc
+						new_sample.read_2_fastqc_report = None
 
 					logging.info('Adding new sample:\n %s' % new_sample)
 					self.all_samples.append(new_sample)
