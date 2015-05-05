@@ -8,7 +8,7 @@ class Component(object):
 		self.location = directory
 		self.project = None
 		self.completed = False # keeps track of whether the component has been executed successfully.
-		self.outputs = None 
+		self.outputs = [] 
 
 	def __str__(self):
 		s = 'Component name: ' + str(self.name) + '\n'

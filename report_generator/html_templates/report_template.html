@@ -39,7 +39,7 @@
 				<ul id="tabPanel" class="nav nav-tabs">
 					{% for section in section_list %}
 					<li>
-						<a data-toggle="tab" href="#{{section.href}}">{{section.title}}</a>
+						<a data-toggle="tab" href="#{{section.href}}">{{section.text}}</a>
 					</li>
 					{% endfor %}
 					<li>
@@ -50,51 +50,46 @@
 				<div class="tab-content">
 					<!-- Tab contents are added here-->
 					<!-- #CONTENT_SECTION#  -->
-					{% for section in simple_link_sections %}
-						<div class="tab-pane fade" id="{{section.href}}">
-							<div class="simple_div">
-								<h2>{{section.header_message}}</h2>
-							</div>
-							<div class="container content-container">
-								<div class="row">
-									{% for link in section.links %}
-									<div>
-										<h3>
-											<a href="{{link.href}}">{{link.text}}</a>
-										</h3>
-									</div>
-									{% endfor %}
-								</div>
-							</div>
-						</div>
-					{% endfor %}
-					{% for section in panel_sections %}	
+	
+					{% for section in sections %}	
 					<div class="tab-pane fade" id="{{section.href}}">
 						<div class="simple_div">
 							<h2>{{section.header_message}}</h2>
 						</div>
 						<div class="container content-container">
 							<div class="row">
-								<div class="panel panel-primary">
-									<div id="{{section.id}}_panel" class="panel-heading keep-pointer">
-										<h3 class="panel-title">{{section.id}}</h3>
-									</div>
-									<div id="{{section.id}}_view" class="panel-body content-panel">
-										{% if section.has_iframe %}
-										<div class="top-and-bottom-padding">
-											<a href="{{section.link}}" target="{{section.id}}_iframe">Back to original report</a>
-											<a class="padded-link" href="{{section.link}}" target="_blank">Open in new tab</a>
+								{% if section.panel_section %}
+									{% for panel in section.contents %}
+									<div class="panel panel-primary">
+										<div id="{{panel.id}}_panel" class="panel-heading keep-pointer">
+											<h3 class="panel-title">{{panel.id}}</h3>
 										</div>
-										<iframe id="{{section.id}}_iframe" name="{{section.id}}_iframe" src="{{section.link}}" class="simple_iframe" marginwidth="0" marginheight="0" frameborder="0" vspace="0" hspace="0">
-										</iframe>
-										{% else %}
-										<div>
-											<img src="{{section.link}}" alt="File not processed/found" style="width: 95%;"></img>
+										<div id="{{panel.id}}_view" class="panel-body content-panel">
+											{% if panel.has_iframe %}
+											<div class="top-and-bottom-padding">
+												<a href="{{panel.link}}" target="{{panel.id}}_iframe">Back to original report</a>
+												<a class="padded-link" href="{{panel.link}}" target="_blank">Open in new tab</a>
+											</div>
+											<iframe id="{{panel.id}}_iframe" name="{{panel.id}}_iframe" src="{{panel.link}}" class="simple_iframe" marginwidth="0" marginheight="0" frameborder="0" vspace="0" hspace="0">
+											</iframe>
+											{% else %}
+											<div>
+												<img src="{{panel.link}}" alt="File not processed/found" style="width: 95%;"></img>
+											</div>
+											{% endif %}
+											<button class="btn btn-primary view_close" type="button">Close panel</button>
 										</div>
-										{% endif %}
-										<button class="btn btn-primary view_close" type="button">Close panel</button>
 									</div>
-								</div>
+									{% endfor %}
+								{% elif section.link_section %}
+									{% for link in section.contents %}
+									<div>
+										<h3>
+											<a href="{{link.href}}">{{link.text}}</a>
+										</h3>
+									</div>
+									{% endfor %}
+								{% endif %}
 							</div>
 						</div>
 					</div>
