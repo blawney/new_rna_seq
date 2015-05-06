@@ -32,9 +32,6 @@ class MalformattedComponentException(Exception):
 class MissingAlignerConfigFileException(Exception):
 	pass
 
-class ParameterOverwriteException(Exception):
-	pass
-
 class AnnotationFileParseException(Exception):
 	pass
 

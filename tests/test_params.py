@@ -82,13 +82,6 @@ class TestParams(unittest.TestCase):
 			p.reset_param('key', 'new_value')
 
 
-	def test_trying_reset_param_via_add_method_raises_exception(self):
-		with self.assertRaises(ParameterOverwriteException):
-			p = Params()
-			d = {"a":1, "b":2}
-			p.add(d)
-			p.add(a=3)
-
 	def test_addition_of_param_objects(self):
 		"""
 		This tests the operator overload of '+'
@@ -118,19 +111,6 @@ class TestParams(unittest.TestCase):
 		self.assertEqual(p1.get("b"), 2)
 		self.assertEqual(p1.get("c"), 3)
 		self.assertEqual(p1.get("d"), 4)
-
-
-	def test_raises_exception_if_adding_param_objects_with_same_values(self):
-		"""
-		This tests the operator overload of '+'
-		"""
-		p1 = Params()
-		p1.add( a = 1, b = 2)
-		p2 = Params()
-		p2.add( a = 3, d = 4)
-
-		with self.assertRaises(ParameterOverwriteException):
-			p3 = p1 + p2
 
 
 	def test_prepend_executes_correctly(self):

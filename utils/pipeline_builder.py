@@ -219,11 +219,8 @@ class PipelineBuilder(object):
 		# if skipping align, try to set the variable.  If exception is thrown, then it has already been set via the input args.  Check 
 		# that the passed arg and the paired_status variable are consistent.  If not, kill the pipeline by throwing exception
 		if not self.builder_params.get('skip_align'):
-			try:
-				self.builder_params.add(paired_alignment = paired_status)
-			except ParameterOverwriteException:
-				if self.builder_params.get('paired_alignment') != paired_status:
-					raise InconsistentPairingStatusException('Arg passed via commandline specified paired_alignment=%s and this is not consistent with the fastq files found.' % self.builder_params.get('paired_alignment'))
+			if self.builder_params.get('paired_alignment') != paired_status:
+				raise InconsistentPairingStatusException('Arg passed via commandline specified paired_alignment=%s and this is not consistent with the fastq files found.' % self.builder_params.get('paired_alignment'))
 		else: # if skipping alignment, need to know paired status of BAM files...can't guess, and need it for downstream steps
 			try:
 				self.builder_params.get('paired_alignment')
