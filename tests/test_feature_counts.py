@@ -130,9 +130,6 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		We will be generating a countfile for each one of those.  When we assemble into a count matrix, we obviously group the files of a particular 'type' (e.g. those coming from deduplicated BAM files).
 		This tests that the the glob methods are called with the correct parameters given the sample annotations prescribed.
 		"""
-		mock_util_methods = mock.Mock()
-		mock_util_methods.case_insensitive_glob = mock.Mock()
-		mock_case_insensitive_glob = mock.Mock()
 
 		p = Params()
 		cp = Params()
@@ -147,18 +144,17 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 
 		project = Project()
 		project.add_parameters(p)
-		project.add_samples([s1, s2, s3])
+		project.add_samples([s1, s2, s3])		
 
-		mock_case_insensitive_glob.side_effect = [ ['/path/to/final/featureCounts/A.counts', '/path/to/final/featureCounts/B.counts', '/path/to/final/featureCounts/C.counts'],
-									['/path/to/final/featureCounts/A.primary.counts', '/path/to/final/featureCounts/B.primary.counts', '/path/to/final/featureCounts/C.primary.counts'],
-									['/path/to/final/featureCounts/A.primary.dedup.counts', '/path/to/final/featureCounts/B.primary.dedup.counts', '/path/to/final/featureCounts/C.primary.dedup.counts']] 
+		result = self.module.get_countfile_groupings(project, cp)
+		expected_result = [
+			['/path/to/final/featureCounts/A.counts', '/path/to/final/featureCounts/B.counts', '/path/to/final/featureCounts/C.counts'], 
+			['/path/to/final/featureCounts/A.primary.counts', '/path/to/final/featureCounts/B.primary.counts', '/path/to/final/featureCounts/C.primary.counts'], 
+			['/path/to/final/featureCounts/A.primary.dedup.counts', '/path/to/final/featureCounts/B.primary.dedup.counts', '/path/to/final/featureCounts/C.primary.dedup.counts']
+		]
+		self.assertEqual(result, expected_result)
 		
-
-		result = self.module.get_countfile_groupings(project, cp, mock_case_insensitive_glob)
 		
-		calls = [mock.call('/path/to/final/featureCounts/*.counts'), mock.call('/path/to/final/featureCounts/*.primary.counts'), mock.call('/path/to/final/featureCounts/*.primary.dedup.counts')]
-		mock_case_insensitive_glob.assert_has_calls(calls)
-
 
 	def test_group_countfiles_raises_exception_if_missing_type(self):
 		"""
@@ -184,13 +180,8 @@ class TestFeatureCounts(unittest.TestCase, ComponentTester):
 		project.add_parameters(p)
 		project.add_samples([s1, s2, s3])
 
-		mock_util_methods = mock.Mock()
-		mock_case_insensitive_glob = mock.Mock()
-		mock_case_insensitive_glob.side_effect = [ ['/path/to/final/featureCounts/A.counts', '/path/to/final/featureCounts/B.counts', '/path/to/final/featureCounts/C.counts'],
-									['/path/to/final/featureCounts/A.primary.counts', '/path/to/final/featureCounts/C.primary.counts'],
-									['/path/to/final/featureCounts/A.primary.dedup.counts', '/path/to/final/featureCounts/B.primary.dedup.counts', '/path/to/final/featureCounts/C.primary.dedup.counts']] 
 		with self.assertRaises(self.module.CountfileQuantityException):
-			result = self.module.get_countfile_groupings(project, cp, mock_case_insensitive_glob)
+			result = self.module.get_countfile_groupings(project, cp)
 
 
 

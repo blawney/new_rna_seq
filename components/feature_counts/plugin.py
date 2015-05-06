@@ -61,7 +61,7 @@ def create_count_matrices(project, component_params, util_methods):
 	sample_names = sorted([s.sample_name for s in project.samples])
 	header_line = ['Gene'] + sample_names
 
-	file_groups = get_countfile_groupings(project, component_params, util_methods.case_insensitive_glob)
+	file_groups = get_countfile_groupings(project, component_params)
 	
 	for file_group in file_groups:
 		files = sorted(file_group)
@@ -96,30 +96,35 @@ def read(matrix, filepath):
 
 
 
-def get_countfile_groupings(project, component_params, case_insensitive_glob):
+def get_countfile_groupings(project, component_params):
 	"""
 	This method aggregates all the countfiles generated from each 'type' of bam file and returns the full filepaths as a list of lists.  
 	That is, we may have multiple bam files for each sample (e.g. primary alignments, deduplicated, etc).
 	We will be generating a countfile for each one of those.  
 	When we assemble into a count matrix, we obviously group the files of a particular 'type' (e.g. those coming from deduplicated BAM files).
 	"""
+
+	sample_count = len(project.samples)
+
 	# get handles (i.e. file suffixes) for all the different count files that were created and make wildcard patterns:
 	s = project.samples[0]
-	extensions = ['*' + os.path.basename(countfile).lstrip(s.sample_name) for countfile in s.countfiles]
 
-	# create full paths by appending the location of the directory for featureCounts output:
-	paths = [os.path.join(component_params.get('feature_counts_output_dir'), p) for p in extensions]
-
-	# get the full groups of the countfiles
-	file_groups = map(case_insensitive_glob, paths)
-
-	# if there are missing files (e.g. a particular sample does not have a countfile that the other samples have), raise an error:
-	sample_count = len(project.samples)
-	for grouping in file_groups:
-		if len(grouping) != sample_count:
+	# this makes a list like ['.primary.dedup.counts', '.primary.counts']
+	extensions = [os.path.basename(countfile).lstrip(s.sample_name) for countfile in s.countfiles]
+	file_groups = []
+	for extension in extensions:
+		grouping = []
+		for sample in project.samples:
+			for countfile in sample.countfiles:
+				if countfile.endswith(sample.sample_name + extension):
+					grouping.append(countfile)
+		if len(grouping) == sample_count:
+			file_groups.append(grouping)
+		else:
 			logging.error('There were %s samples in total.  However, the number of countfiles was not equal to this.' % sample_count)
 			logging.error(grouping)
 			raise CountfileQuantityException('The number of countfiles did not match the number of samples.  Check log.')
+
 	return file_groups
 
 

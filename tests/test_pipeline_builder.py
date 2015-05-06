@@ -199,6 +199,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(fastqc_report_file = 'fastqc_report.html')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
+		mock_pipeline_params.add(paired_alignment = False)
 		mock_pipeline_params.add(target_bam = 'sort.bam')
 		mock_pipeline_params.add(sample_dir_prefix = 'Sample_')
 		p.builder_params = mock_pipeline_params
@@ -245,6 +246,7 @@ class TestPipelineBuilder(unittest.TestCase):
 		mock_pipeline_params.add(fastqc_report_file = 'fastqc_report.html')
 		mock_pipeline_params.add(sample_annotation_file = '/path/to/project_dir/samples.txt')
 		mock_pipeline_params.add(skip_align = False)
+		mock_pipeline_params.add(paired_alignment = True)
 		mock_pipeline_params.add(target_bam = 'sort.bam')
 		mock_pipeline_params.add(sample_dir_prefix = 'Sample_')
 		p.builder_params = mock_pipeline_params
