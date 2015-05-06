@@ -52,7 +52,6 @@ def run(project):
 	
 	alignment_script_paths = []
 	for sample in project.samples:
-		logging.info
 		# extract the path to the sample directory via the fastq file:
 		sample_dir_path = os.path.dirname(sample.read_1_fastq)
 		
@@ -77,10 +76,12 @@ def register_bam_files(project, glob_method):
 	"""
 	This finds all the bam files created by the alignment step and adds them to the respective Sample objects
 	"""
+	logging.info('Registering BAM files with their respective samples')
 	for sample in project.samples:
 		bam_files = glob_method(os.path.join(sample.alignment_dir, '*bam'))
+		logging.info('For sample %s, found: %s' % (sample.sample_name, bam_files))
 		if len(bam_files) > 0:
-			sample.bamfiles += bam_files
+			sample.bamfiles = bam_files
 		else:
 			logging.info('Could not find any BAM files in %s. ' % sample.alignment_dir)
 			raise BAMFileNotFoundException
