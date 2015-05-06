@@ -5,7 +5,7 @@ import os
 # relative paths are converted to absolute paths for strictness
 class MakeAbsolutePathAction(argparse.Action):
 	def __call__(self, parser, namespace, values, option_string=None):
-		setattr(namespace, self.dest, os.path.abspath(values))
+		setattr(namespace, self.dest, os.path.realpath(os.path.abspath(values)))
 
 
 def setup_args():
@@ -14,38 +14,41 @@ def setup_args():
 	Add/edit here
 	"""
 	parser = argparse.ArgumentParser()
+	subparsers = parser.add_subparsers(title='Subcommands to the pipeline')
+	run_subparser = subparsers.add_parser('run')
+	restart_subparser = subparsers.add_parser('restart')
 
-	parser.add_argument("-restart",
-				required=False,
+	restart_subparser.add_argument("-pickle",
+				required=True,
 				default=None,
 				help="Path to a restart file (a pickled python object).",
 				action=MakeAbsolutePathAction,
 				dest="restart")
 
-	parser.add_argument("-d", "--dir", 
+	run_subparser.add_argument("-d", "--dir", 
 				required=True, 
 				help="Full path to the project directory.",
 				action=MakeAbsolutePathAction,
 				dest="project_directory")
 
-	parser.add_argument("-g", "--genome", 
+	run_subparser.add_argument("-g", "--genome", 
 				required=True,
 				help="The reference genome." ,
 				dest="genome")
 
-	parser.add_argument("-o", "--output",
+	run_subparser.add_argument("-o", "--output",
 				required=True,
 				help="Full path to the output directory.",
 				action=MakeAbsolutePathAction,
 				dest="output_location")
 
-	parser.add_argument("-s", "--samples",
+	run_subparser.add_argument("-s", "--samples",
 				required=True,
 				help="The path to a sample annotation file (for formatting, see documentation).",
 				action=MakeAbsolutePathAction,
 				dest="sample_annotation_file")
 
-	parser.add_argument("-a", "--aligner",
+	run_subparser.add_argument("-a", "--aligner",
 				required=False,
 				help="The name of the aligner to use.",
 				dest="aligner")
@@ -56,35 +59,35 @@ def setup_args():
 				action=MakeAbsolutePathAction,
 				dest="contrast_file")
 
-	parser.add_argument("-config",
+	run_subparser.add_argument("-config",
 				required=False,
 				default=None,
 				help="Path to a custom project configuration file.",
 				action=MakeAbsolutePathAction,
 				dest="project_configuration_file")
 
-	parser.add_argument("-skip_align",
+	run_subparser.add_argument("-skip_align",
 				action="store_true",
 				default=False,
 				required=False,
 				help="If skipping alignment (already have SAM/BAM files)",
 				dest="skip_align")
 
-	parser.add_argument("-paired",
+	run_subparser.add_argument("-paired",
 				action="store_true",
 				required=False,
 				default=False,
 				help="If should be treated as paired alignment",
 				dest="paired_alignment")
 
-	parser.add_argument("-skip_analysis",
+	run_subparser.add_argument("-skip_analysis",
 				action="store_true",
 				required=False,
 				default=False,
 				help="If skipping analysis.",
 				dest="skip_analysis")
 
-	parser.add_argument("-t","--target",
+	run_subparser.add_argument("-t","--target",
 				required=False,
 				default='bam',
 				help="A tag (string) for selecting a particular set of (existing) BAM files to use with analysis.",
