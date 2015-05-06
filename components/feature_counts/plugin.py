@@ -150,9 +150,9 @@ def execute_counting(project, component_params, util_methods):
 				logging.info(command)
 				process = subprocess.Popen(command, shell = True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
 				stdout, stderr = process.communicate()
-				logging.info('STDOUT from normalization script: ')
+				logging.info('STDOUT from featureCounts script: ')
 				logging.info(stdout)
-				logging.info('STDERR from normalization script: ')
+				logging.info('STDERR from featureCounts script: ')
 				logging.info(stderr)
 				if process.returncode != 0:			
 					logging.error('There was an error encountered during execution of featureCounts for sample %s ' % sample.sample_name)

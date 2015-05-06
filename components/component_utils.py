@@ -42,7 +42,7 @@ class ComponentOutput(object):
 		self.files = files
 		self.header_msg = header_msg
 		self.nav_text = tab_title
-		if display_format in DISPLAY_FORMATS:
+		if display_format in ComponentOutput.DISPLAY_FORMATS:
 			self.display_format = display_format
 		else:
 			raise InvalidDisplayOptionException('Display format %s is not implemented.  Implement it, or choose from %s' % (display_format, DISPLAY_FORMATS))
