@@ -25,7 +25,7 @@ class BAMFileNotFoundException(Exception):
 	pass
 
 
-def run(project):
+def run(name, project):
 	"""
 	The main entry method for the module
 	Takes in a Project object, which contains all the relevant information to perform the alignments
