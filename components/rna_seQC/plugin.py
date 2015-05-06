@@ -52,8 +52,8 @@ def run_qc(project, component_params, util_methods):
 		if os.path.isfile(bamfile):
 
 			# make output directory for this BAM file's QC:
-			name = util_methods.case_insensitive_rstrip(os.path.basename(bamfile), 'bam')
-			output_dir = os.path.join(component_params.get('rnaseqc_output_dir'), name)
+			name = util_methods.case_insensitive_rstrip(os.path.basename(bamfile), '.bam')
+			output_dir = os.path.join( project.parameters.get('output_location'), component_params.get('rnaseqc_output_dir'), name)
 			util_methods.create_directory(output_dir)
 
 			arg = '"' + sample.sample_name + '|' + bamfile + '|-"'
