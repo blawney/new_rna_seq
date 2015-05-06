@@ -53,7 +53,7 @@ def setup_args():
 				help="The name of the aligner to use.",
 				dest="aligner")
 
-	parser.add_argument("-c", "--contrasts",
+	run_subparser.add_argument("-c", "--contrasts",
 				required=False,
 				help="The path to a contrast annotation file (for formatting, see documentation).",
 				action=MakeAbsolutePathAction,
