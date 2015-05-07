@@ -69,7 +69,7 @@ def run(name, project):
 
 	execute_alignments(alignment_script_paths, project.parameters)
 	register_bam_files(project, util_methods.case_insensitive_glob)
-
+	return [None] # needs to return a list
 
 
 def register_bam_files(project, glob_method):

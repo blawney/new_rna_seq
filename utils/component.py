@@ -40,7 +40,7 @@ class Component(object):
 			run_method = getattr(module, method_name)
 
 			# run the component and add the output objects to this object:
-			self.outputs.append(run_method(self.name, self.project))
+			self.outputs.extend(run_method(self.name, self.project))
 
 		except ImportError as ex:
 			logging.error('ImportError: Could not load the module at %s ' % filename)
