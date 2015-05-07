@@ -191,12 +191,12 @@ class PipelineBuilder(object):
 					read_1_fastqc = glob.glob(os.path.join(expected_directory, '*' + self.builder_params.get('read_1_fastqc_tag'), self.builder_params.get('fastqc_report_file')))
 					read_2_fastqc = glob.glob(os.path.join(expected_directory, '*' + self.builder_params.get('read_2_fastqc_tag'), self.builder_params.get('fastqc_report_file')))
 					if len(read_1_fastqc) == 1:
-						new_sample.read_1_fastqc_report = read_1_fastqc
+						new_sample.read_1_fastqc_report = read_1_fastqc[0]
 					else:
 						new_sample.read_1_fastqc_report = None
 
 					if len(read_2_fastqc) == 1:
-						new_sample.read_2_fastqc_report = read_2_fastqc
+						new_sample.read_2_fastqc_report = read_2_fastqc[0]
 					else:
 						new_sample.read_2_fastqc_report = None
 
