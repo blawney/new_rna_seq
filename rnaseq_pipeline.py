@@ -7,7 +7,6 @@ import datetime
 import report_generator.create_report as report_writer
 
 from utils.pipeline_builder import PipelineBuilder
-
 from utils.pipeline import Pipeline # allows unpickling the pipeline object
 
 
@@ -52,7 +51,6 @@ if __name__ == "__main__":
 			builder.configure()
 			configured_pipeline = builder.build()
 
-		print 'run'
 		configured_pipeline.run()
 
 		report_writer.write_report(configured_pipeline)
