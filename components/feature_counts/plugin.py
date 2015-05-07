@@ -44,8 +44,11 @@ def run(name, project):
 	# add these common files to the project object (so that other components have access to them):
 	project.raw_count_matrices = merged_count_files
 
+	# create a dictionary of file names to file paths:
+	cf_dict = {os.path.basename(f): f for f in merged_count_files}
+
 	# create the ComponentOutput object and return it
-	return [component_utils.ComponentOutput(merged_count_files, component_params.get('tab_title'), component_params.get('header_msg'), component_params.get('display_format')),]
+	return [component_utils.ComponentOutput(cf_dict, component_params.get('tab_title'), component_params.get('header_msg'), component_params.get('display_format')),]
 
 
 def create_count_matrices(project, component_params, util_methods):
