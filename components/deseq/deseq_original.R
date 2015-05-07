@@ -17,7 +17,7 @@ NUM_GENES<-as.integer(args[7])
 count_data <- read.table(RAW_COUNT_MATRIX, sep='\t', header = T)
 
 # save the gene names for later and remove that column of the dataframe
-gene_names <- count_data[,1]
+rownames(count_data) <- count_data[,1]
 count_data<-count_data[-1]
 
 # read the annotations and get the conditions in the same order as the columns of the count_data dataframe
@@ -31,7 +31,7 @@ cds=estimateDispersions(cds)
 res=nbinomTest(cds, CONDITION_A, CONDITION_B)
 
 #write the differential expression results to a file:
-write.csv(as.data.frame(res), file=OUTPUT_DESEQ_FILE, row.names=FALSE)
+write.csv(as.data.frame(res), file=OUTPUT_DESEQ_FILE, row.names=FALSE, quote=FALSE)
 
 
 ######### For creating contrast-level heatmap ######################
