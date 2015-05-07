@@ -6,9 +6,16 @@ import pickle
 import datetime
 import report_generator.create_report as report_writer
 
-
 from utils.pipeline_builder import PipelineBuilder
+
 from utils.pipeline import Pipeline # allows unpickling the pipeline object
+
+
+def append_to_syspath(pipeline_home):
+	for root, dirs, files in os.walk(pipeline_home):
+		for dir in dirs:
+			sys.path.append(os.path.join(root,dir))
+
 
 def create_logger(log_dir):
 	"""
@@ -20,7 +27,6 @@ def create_logger(log_dir):
 
 
 if __name__ == "__main__":
-
 	try:
 		# get the 'home' location of this file (the pipeline's 'home' location)
 		pipeline_home = os.path.dirname(os.path.realpath(__file__))
@@ -35,6 +41,7 @@ if __name__ == "__main__":
 
 		# if restarting from a pickle object
 		if cmd_line_params.get('restart', None):
+			append_to_syspath(pipeline_home)
 			configured_pipeline = pickle.load(open( cmd_line_params.get('restart'), 'rb'))
 			create_logger(configured_pipeline.project.parameters.get('output_location'))
 		else:
@@ -45,6 +52,7 @@ if __name__ == "__main__":
 			builder.configure()
 			configured_pipeline = builder.build()
 
+		print 'run'
 		configured_pipeline.run()
 
 		report_writer.write_report(configured_pipeline)

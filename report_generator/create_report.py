@@ -101,7 +101,7 @@ def write_report(pipeline):
 	"""
 	try:
 		# for shorter referencing
-		parameters = pipeling.project.parameters
+		parameters = pipeline.project.parameters
 
 		# get the location of the utils directory:
 		utils_dir = parameters.get('utils_dir')

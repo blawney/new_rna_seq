@@ -57,7 +57,7 @@ def run(name, project):
 		
 		# define, create, and assign the path to the alignment output directory:
 		align_dir_path = os.path.join(sample_dir_path, project.parameters.get('alignment_dir'))
-		util_methods.create_directory(align_dir_path)
+		#util_methods.create_directory(align_dir_path)
 		sample.alignment_dir = align_dir_path # note assigning member attribute to this sample
 
 		# fill out the remainder of the script template and write to the sample directory:
@@ -67,7 +67,7 @@ def run(name, project):
 			outfile.write(align_script_string)
 		alignment_script_paths.append(align_script_path)
 
-	execute_alignments(alignment_script_paths, project.parameters)
+	#execute_alignments(alignment_script_paths, project.parameters)
 	register_bam_files(project, util_methods.case_insensitive_glob)
 
 

@@ -14,7 +14,7 @@ OUTPUT_HEATMAP_FILE <- args[6] #full path
 NUM_GENES<-as.integer(args[7])
 
 # read the raw count matrix:
-count_data <- read.table(RAW_COUNTS_FILE, sep='\t', header = T)
+count_data <- read.table(RAW_COUNT_MATRIX, sep='\t', header = T)
 
 # save the gene names for later and remove that column of the dataframe
 gene_names <- count_data[,1]
