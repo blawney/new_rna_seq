@@ -208,7 +208,7 @@ class PipelineBuilder(object):
 					logging.error('%s was not, in fact, a directory or the name scheme was incorrect.' % expected_directory)
 					raise ProjectStructureException('The sample directory %s does not exist' % expected_directory)
 			else: # if skipping alignment:
-				search_pattern = sample_name + '.*?' + self.builder_params.get('target_bam')
+				search_pattern = sample_name + '*' + self.builder_params.get('target_bam') # uses a glob method (unix-like, NOT a regex pattern)
 				bam_files = util_methods.find_files(self.builder_params.get('project_directory'), search_pattern)
 				new_sample = Sample(sample_name, condition, bamfiles = bam_files)
 				logging.info('Adding new sample:\n %s' % new_sample)
