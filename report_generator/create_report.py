@@ -1,3 +1,4 @@
+import logging
 import jinja2
 import shutil
 import os
@@ -19,8 +20,9 @@ class Link(object):
 
 
 class Panel(object):
-	def __init__(self, id, link, has_iframe = False):
+	def __init__(self, id, title, link, has_iframe = False):
 		self.id = id
+		self.title = title
 		self.link = link
 		self.has_iframe = has_iframe
 
@@ -59,9 +61,9 @@ def add_fastq(project, transformer):
 	tab_header = Link("fastq_files","FastQ Files")
 	file_links = []
 	for sample in project.samples:
-		file_links.append(Link(transformer.get_relpath(sample.read_1_fastq), os.path.basename(sample.read_1_fastq)))
+		file_links.append(Link(transformer(sample.read_1_fastq), os.path.basename(sample.read_1_fastq)))
 		if project.parameters.get('paired_alignment'):
-			file_links.append(Link(transformer.get_relpath(sample.read_2_fastq), os.path.basename(sample.read_2_fastq)))
+			file_links.append(Link(transformer(sample.read_2_fastq), os.path.basename(sample.read_2_fastq)))
 	section = Section("fastq_files", "Sequence files in compressed format:", file_links)
 	return tab_header, section
 
@@ -71,7 +73,7 @@ def add_bam(project, transformer):
 	file_links = []
 	for sample in project.samples:
 		for bamfile in sample.bamfiles:
-			file_links.append(Link(transformer.get_relpath(bamfile), os.path.basename(bamfile)))
+			file_links.append(Link(transformer(bamfile), os.path.basename(bamfile)))
 
 	section = Section("bam_files", "Binary sequence alignment (BAM) files:", file_links)
 	return tab_header, section
@@ -84,7 +86,7 @@ def add_fastQC_reports(project, transformer):
 		links = [sample.read_1_fastqc_report]
 		if project.parameters.get('paired_alignment'):
 			links.append(sample.read_2_fastqc_report)
-		subpanels += [Panel(os.path.basename(link), transformer.get_relpath(link), True) for link in links]
+		subpanels += [Panel(sample.sample_name + '_fastqc_' + str(i+1), sample.sample_name + ' ( read ' + str(i+1) + ' )', transformer(link), True) for i,link in enumerate(links)]
 		
 	section = Section("fastQC_files", "Sequencing quality reports:", subpanels)
 	return tab_header, section
@@ -113,7 +115,7 @@ def write_report(pipeline):
 		# read the config file for this report generator:
 		this_directory = os.path.dirname(os.path.realpath(__file__))
 		config_filepath = util_methods.locate_config(this_directory)
-		report_parameters = config_parser.read_config(config_filepath)
+		report_parameters = config_parser.read_config(config_filepath, 'DEFAULT')
 
 		# create the report directory:
 		report_directory = os.path.join(parameters.get('output_location'), report_parameters.get('report_directory'))
@@ -130,27 +132,33 @@ def write_report(pipeline):
 		transformer = lambda x: os.path.relpath(x, report_directory)
 
 		if not parameters.get('skip_align'):
-			add_to_context(add_fastq(pipeline.project, transformer))
+			logging.info('Adding fastq files to output report.')
+			add_to_context(context, *add_fastq(pipeline.project, transformer))
 			
-		add_to_context(add_bam(pipeline.project, transformer))
-		add_to_context(add_fastQC_reports(pipeline.project, transformer))
-	
+		logging.info('Adding BAM files to output report.')
+		add_to_context(context, *add_bam(pipeline.project, transformer))
+		logging.info('Adding fastQC files to output report.')
+		add_to_context(context, *add_fastQC_reports(pipeline.project, transformer))
+
 		for component in pipeline.components:
 			for i, output in enumerate(component.outputs):
-				href = component.name + "_" + str(i)
-				tab_header = Link(href, output.nav_text)
-				if output.display_format == 'list':
-					contents = [Link(transformer.get_relpath(href), text) for text,href in output.files.items()]
-				elif output.display_format == 'collapse_panel_iframe':
-					contents = [Panel(text, transformer.get_relpath(href), True) for text,href in output.files.items()]
-				elif output.display_format == 'collapse_panel':
-					contents = [Panel(text, transformer.get_relpath(href), False) for text,href in output.files.items()]
-				else:
-					raise InvalidDisplayException('An invalid display type was specified.')
-				section = Section(href, output.header_msg, contents)
-				add_to_context(tab_header, section)
+				if output:
+					logging.info('Adding files from Component: %s to output report.' % component.name)
+					section_href = component.name + "_" + str(i)
+					tab_header = Link(section_href, output.nav_text)
+					if output.display_format == 'list':
+						contents = [Link(transformer(href), text) for text,href in output.files.items()]
+					elif output.display_format == 'collapse_panel_iframe':
+						contents = [Panel( section_href + '_' + str(i) , t[0], transformer(t[1]), True) for i,t in enumerate(output.files.items())]
+					elif output.display_format == 'collapse_panel':
+						contents = [Panel( section_href + '_' + str(i) , t[0], transformer(t[1]), False) for i,t in enumerate(output.files.items())]
+					else:
+						raise InvalidDisplayException('An invalid display type was specified.')
+					section = Section(section_href, output.header_msg, contents)
+					add_to_context(context, tab_header, section)
 
-		completed_report_path = os.path.join(report_directory, report_parameters('completed_html_report'))
+		logging.info('Rendering report.')
+		completed_report_path = os.path.join(report_directory, report_parameters.get('completed_html_report'))
 		with open(completed_report_path, 'w') as outfile:
 			outfile.write(template.render(context))
 
