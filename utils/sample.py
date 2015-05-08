@@ -7,6 +7,8 @@ class Sample(object):
 		self.condition = condition
 		self.read_1_fastq = read_1_fastq
 		self.read_2_fastq = read_2_fastq
+		self.read_1_fastqc_report = None
+		self.read_2_fastqc_report = None
 		self.bamfiles = bamfiles
 		self.flowcell_id = 'DEFAULT'
 		self.lane = '0'

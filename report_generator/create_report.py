@@ -86,10 +86,12 @@ def add_fastQC_reports(project, transformer):
 		links = [sample.read_1_fastqc_report]
 		if project.parameters.get('paired_alignment'):
 			links.append(sample.read_2_fastqc_report)
-		subpanels += [Panel(sample.sample_name + '_fastqc_' + str(i+1), sample.sample_name + ' ( read ' + str(i+1) + ' )', transformer(link), True) for i,link in enumerate(links)]
-		
-	section = Section("fastQC_files", "Sequencing quality reports:", subpanels)
-	return tab_header, section
+			subpanels += [Panel(sample.sample_name + '_fastqc_' + str(i+1), sample.sample_name + ' ( read ' + str(i+1) + ' )', transformer(link), True) for i,link in enumerate(links) if link]
+	if len(subpanels) > 0:
+		section = Section("fastQC_files", "Sequencing quality reports:", subpanels)
+		return tab_header, section
+	else:
+		return None, None
 
 
 def add_to_context(context, tab, section):
