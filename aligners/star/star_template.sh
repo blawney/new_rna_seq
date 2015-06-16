@@ -95,7 +95,7 @@ $SAMTOOLS view -b -F 0x0100 $SORTED_BAM > $SORTED_AND_PRIMARY_FILTERED_BAM  || {
 $SAMTOOLS index $SORTED_AND_PRIMARY_FILTERED_BAM || { echo 'Failed while indexing primary alignment BAM file. Exiting.  '; exit 1; }
 
 # Create a de-duped BAM file (may or may not want, but do it anyway) 	
-DEDUPED_PRIMARY_SORTED_BAM=$BASE.sorted.primary.dedup.bam
+DEDUPED_PRIMARY_SORTED_BAM=$BASE.sort.primary.dedup.bam
 	
 java -Xmx8g -jar $PICARD_DIR/MarkDuplicates.jar \
 	INPUT=$SORTED_AND_PRIMARY_FILTERED_BAM \
