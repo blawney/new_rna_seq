@@ -92,17 +92,24 @@ def parse_annotation_file(annotation_filepath):
 
 
 
-def create_directory(path):
+def create_directory(path, overwrite = False):
 	"""
 	Creates a directory.  If it cannot (due to write permissions, etc).  Issues a message and kills the pipeline
 	"""
 	# to avoid overwriting data in an existing directory, only work in a new directory 
-	if os.path.isdir(path):
+	if os.path.isdir(path) and not overwrite:
 		raise CannotMakeOutputDirectoryException("The path ("+ path +") is an existing directory. To avoid overwriting data, please supply a path to a new directory")
 	elif os.access(os.path.dirname(path), os.W_OK):
 		try:
 			os.makedirs(path, 0775)
+		except OSError as ex:
+			if ex.errno == 17 and overwrite:
+				logging.info('Overwriting directory at %s' % path)
+			else:
+				logging.error('OSError exception raised when trying to create directory at %s ' % path)
+				raise CannotMakeOutputDirectoryException("Could not create the output directory at: (" + str(path) + "). Check write-permissions, etc.")
 		except Exception as ex:
+			logging.error('Caught a general exception (not OSError) when trying to create directory at %s ' % path)
 			raise CannotMakeOutputDirectoryException("Could not create the output directory at: (" + str(path) + "). Check write-permissions, etc.")
 			
 	else:
