@@ -31,7 +31,7 @@ def run(name, project):
 	output_dir = os.path.join(project.parameters.get('output_location'), component_params.get('rnaseqc_output_dir'))
 
 	# create the final output directory, if possible
-	util_methods.create_directory(output_dir)
+	util_methods.create_directory(output_dir, overwrite = True)
 
 	# run the QC processes:
 	reports = run_qc(project, component_params, util_methods)
@@ -54,7 +54,7 @@ def run_qc(project, component_params, util_methods):
 			# make output directory for this BAM file's QC:
 			name = util_methods.case_insensitive_rstrip(os.path.basename(bamfile), '.bam')
 			output_dir = os.path.join( project.parameters.get('output_location'), component_params.get('rnaseqc_output_dir'), name)
-			util_methods.create_directory(output_dir)
+			util_methods.create_directory(output_dir, overwrite = True)
 
 			arg = '"' + sample.sample_name + '|' + bamfile + '|-"'
 

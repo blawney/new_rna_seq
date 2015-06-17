@@ -33,7 +33,7 @@ def run(name, project):
 	component_params['deseq_output_dir']  = output_dir 
 
 	# create the final output directory, if possible
-	util_methods.create_directory(output_dir)
+	util_methods.create_directory(output_dir, overwrite = True)
 
 	deseq_output_files, heatmap_files = call_deseq(project, component_params)
 

@@ -33,7 +33,7 @@ def run(name, project):
 	component_params['normalized_counts_output_dir'] = output_dir
 
 	# create the final output directory, if possible
-	util_methods.create_directory(output_dir)
+	util_methods.create_directory(output_dir, overwrite = True)
 
 	# perform the actual normalization:
 	output_files = normalize(project, component_params)

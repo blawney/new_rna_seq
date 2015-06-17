@@ -39,7 +39,7 @@ def run(name, project):
 
 
 	# create the final output directory, if possible
-	util_methods.create_directory(output_dir)
+	util_methods.create_directory(output_dir, overwrite = True)
 
 	# create the cls and gct files for input to GSEA:
 	create_input_files(project, component_params)

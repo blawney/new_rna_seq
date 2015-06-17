@@ -33,7 +33,7 @@ def run(name, project):
 	component_params['feature_counts_output_dir'] = output_dir
 
 	# create the final output directory, if possible
-	util_methods.create_directory(output_dir)
+	util_methods.create_directory(output_dir, overwrite = True)
 
 	# start the counting:
 	execute_counting(project, component_params, util_methods)
