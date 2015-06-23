@@ -33,22 +33,25 @@ def run(name, project):
 	project.parameters.add(component_utils.parse_config_file(project, this_dir))
 	component_params = component_utils.parse_config_file(project, this_dir, 'COMPONENT_SPECIFIC')
 
-	# create a full path to the output directory for GSEA's output:
-	output_dir = os.path.join(project.parameters.get('output_location'), component_params.get('gsea_output_dir'))
-	component_params.reset_param('gsea_output_dir', output_dir)	
+	if project.parameters.get('genome') in component_params.get('acceptable_genomes'): 
 
+		# create a full path to the output directory for GSEA's output:
+		output_dir = os.path.join(project.parameters.get('output_location'), component_params.get('gsea_output_dir'))
+		component_params.reset_param('gsea_output_dir', output_dir)	
 
-	# create the final output directory, if possible
-	util_methods.create_directory(output_dir, overwrite = True)
+		# create the final output directory, if possible
+		util_methods.create_directory(output_dir, overwrite = True)
 
-	# create the cls and gct files for input to GSEA:
-	create_input_files(project, component_params)
+		# create the cls and gct files for input to GSEA:
+		create_input_files(project, component_params)
 
-	# run it:
-	output = run_gsea(project, component_params, util_methods)
+		# run it:
+		output = run_gsea(project, component_params, util_methods)
 
-	return [component_utils.ComponentOutput(output, component_params.get('tab_title'), component_params.get('header_msg'), component_params.get('display_format')),]
-
+		return [component_utils.ComponentOutput(output, component_params.get('tab_title'), component_params.get('header_msg'), component_params.get('display_format')),]
+	else:
+		# return a list of None if we shouldn't run GSEA for this genome
+		return [None,]
 
 
 def create_input_files(project, component_params):
