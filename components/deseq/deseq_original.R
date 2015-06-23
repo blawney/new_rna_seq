@@ -24,10 +24,19 @@ count_data<-count_data[-1]
 annotations <- read.table(SAMPLE_ANNOTATION_FILE, sep='\t', header = F, row.names=1)
 annotations <- annotations[colnames(count_data),]
 
+# the number of samples in each contrast group
+num_A = sum(annotations == CONDITION_A)
+num_B = sum(annotations == CONDITION_B)
+
 #run the DESeq steps:
 cds=newCountDataSet(count_data, annotations)
 cds=estimateSizeFactors(cds)
-cds=estimateDispersions(cds)
+
+if (num_B<=2 && num_A<=2){
+	cds = estimateDispersions( cds, method="blind", sharingMode="fit-only" )
+}else{
+	cds <- estimateDispersions (cds)
+}
 res=nbinomTest(cds, CONDITION_A, CONDITION_B)
 
 #write the differential expression results to a file:
@@ -37,7 +46,11 @@ write.csv(as.data.frame(res), file=OUTPUT_DESEQ_FILE, row.names=FALSE, quote=FAL
 ######### For creating contrast-level heatmap ######################
 
 #produce a heatmap of the normalized counts, using the variance-stabilizing transformation:
-cdsFullBlind<-estimateDispersions(cds, method="blind")
+if (num_B<=2 && num_A<=2){
+	cdsFullBlind<-estimateDispersions(cds, method="blind", fitType="local")
+}else{
+	cdsFullBlind<-estimateDispersions(cds, method="blind")
+}
 vsdFull<-varianceStabilizingTransformation(cdsFullBlind)
 
 nc<-counts( cds, normalized=TRUE )
