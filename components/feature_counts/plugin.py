@@ -44,6 +44,9 @@ def run(name, project):
 	# add these common files to the project object (so that other components have access to them):
 	project.raw_count_matrices = merged_count_files
 
+	# change permissions on all those:
+	[os.chmod(f, 0775) for f in merged_count_files]
+
 	# create a dictionary of file names to file paths:
 	cf_dict = {os.path.basename(f): f for f in merged_count_files}
 

@@ -37,6 +37,10 @@ def run(name, project):
 
 	deseq_output_files, heatmap_files = call_deseq(project, component_params)
 
+	# change permissions:
+	[os.chmod(f,0775) for f in deseq_output_files]
+	[os.chmod(f,0775) for f in heatmap_files]
+
 	# create the ComponentOutput object and return it
 	c1 = component_utils.ComponentOutput(deseq_output_files, component_params.get('deseq_tab_title'), component_params.get('deseq_header_msg'), component_params.get('deseq_display_format'))
 	c2 = component_utils.ComponentOutput(heatmap_files, component_params.get('heatmap_tab_title'), component_params.get('heatmap_header_msg'), component_params.get('heatmap_display_format'))
