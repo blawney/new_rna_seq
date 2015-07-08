@@ -262,7 +262,7 @@ class PipelineBuilder(object):
 		selected_genome = self.builder_params.get('genome')		
 		try:
 			config_filepath = util_methods.locate_config(genomes_dir)
-			self.builder_params.add(cfg_parser.read_config(config_filepath), selected_genome)
+			self.builder_params.add(cfg_parser.read_config(config_filepath, selected_genome))
 
 		except Exception as ex:
 			logging.error('Caught exception while looking for genome configuration file: ')

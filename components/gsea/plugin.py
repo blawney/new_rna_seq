@@ -2,6 +2,7 @@ import logging
 import sys
 import os
 import imp
+import glob
 import subprocess
 import pandas as pd
 from collections import defaultdict
@@ -37,15 +38,18 @@ def run(name, project):
 
 		# create a full path to the output directory for GSEA's output:
 		output_dir = os.path.join(project.parameters.get('output_location'), component_params.get('gsea_output_dir'))
-		component_params.reset_param('gsea_output_dir', output_dir)	
+		component_params['gsea_output_dir'] = output_dir	
 
 		# create the final output directory, if possible
+		logging.info('Creating output directory at %s' % output_dir)
 		util_methods.create_directory(output_dir, overwrite = True)
 
 		# create the cls and gct files for input to GSEA:
+		logging.info('About to create the CLS and GCT files')
 		create_input_files(project, component_params)
 
 		# run it:
+		logging.info('Actually run GSEA')
 		output = run_gsea(project, component_params, util_methods)
 
 		return [component_utils.ComponentOutput(output, component_params.get('tab_title'), component_params.get('header_msg'), component_params.get('display_format')),]
@@ -59,9 +63,10 @@ def create_input_files(project, component_params):
 	Create the .cls and .gct files necessary for input to GSEA
 	'''
 
-	# first create the cls file
+	# first create the cls file and update cls_file to be the absolute path
 	cls_filepath = os.path.join(component_params.get('gsea_output_dir'), component_params.get('cls_file'))
-	
+	component_params['cls_file'] = cls_filepath	
+
 	# create a dictionary mapping the condition to the corresponding samples:
 	condition_to_sample_map = defaultdict(list)
 	for sample in project.samples:
@@ -69,42 +74,54 @@ def create_input_files(project, component_params):
 
 	# a sorted list of the conditions featured in this experiment
 	conditions = sorted(condition_to_sample_map.keys())
+	logging.info('Conditions found for CLS file: %s' % conditions)
 	
 	# build a string for the file contents and write it to the CLS file
 	cls_contents = ""
-	cls_contents += "\t".join([str(len(project.samples)), len(conditions), '1']) + "\n"
+	cls_contents += "\t".join([str(len(project.samples)), str(len(conditions)), '1']) + "\n"
 	cls_contents += "\t".join(["#"] + conditions) + "\n"
 	cls_contents += "\t".join(["\t".join([k]*len(condition_to_sample_map[k])) for k in conditions])
 	with open(cls_filepath, 'w') as cls:
 		cls.write(cls_contents)
 
+	logging.info('Done writing CLS file')
 	
 	# read in the normalized expression matrix
 	exp_mtx = [p for p in project.normalized_count_matrices if p.endswith(component_params.get('normalized_count_target'))]
+	logging.info('All normalized count matrices: %s ' % project.normalized_count_matrices)
+	logging.info('Use this file for GSEA analysis: %s ' % exp_mtx)
 	if len(exp_mtx) == 1:
+
 		expression_data = pd.read_table(exp_mtx[0], sep = '\t')
-		
+
 		# do not want to assume if the first column (the gene symbols) has any particular naming convention.  Simply rename it here
 		gene_col_name = 'gene'
 		expression_data.rename(columns = {expression_data.columns[0]:gene_col_name}, inplace = True)
-		
+
 		# add the Description column for the gct format:
 		desc_col = 'Description'
 		expression_data[desc_col] = 'NA'
 		
 		# order the columns of the matrix to match the cls file and add the new first column at the beginning:
-		ordered_cols = reduce(lambda x,y: x+y, [d[c] for c in conditions])
+		ordered_cols = reduce(lambda x,y: x+y, [condition_to_sample_map[c] for c in conditions])
 		ordered_cols.insert(0, gene_col_name)
 		ordered_cols.insert(1, desc_col)
+
+		logging.info('New column order: %s ' % ordered_cols)
 		
 		# now use this list to re-order the columns of the exp matrix:
 		expression_data = expression_data[ordered_cols]
 
-		with open(component_params.get('gct_file')) as gct_out:
+		# Create the gct file and update gct_file to be the absolute path
+		gct_filepath = os.path.join(component_params.get('gsea_output_dir'), component_params.get('gct_file'))
+		component_params['gct_file'] = gct_filepath	
+		logging.info('GCT location: %s ' % gct_filepath)
+		with open(gct_filepath, 'w') as gct_out:
 			intro_lines = '#1.2\n'
 			intro_lines += str(expression_data.shape[0]) + '\t' + str(expression_data.shape[1]-2) + '\n'
 			gct_out.write(intro_lines)
 			expression_data.to_csv(gct_out, sep='\t', index = False)
+			logging.info('Done writing')
 	else:
 		raise NormalizedCountFileNotFoundException('Could not find the normalized count file to use, or found more than 1, so ambiguous')
 
@@ -169,8 +186,13 @@ def run_gsea(project, component_params, util_methods):
 		else:
 			report_path_pattern = os.path.join(component_params.get('gsea_output_dir'), report_label + '*', component_params.get('gsea_default_html'))
 			report_path = glob.glob(report_path_pattern)
+			logging.info('Searching for report path pattern: %s' % report_path_pattern)
+			logging.info('Found: %s' % report_path)
 			if len(report_path) == 1:
 				output_reports[contrast_string] = report_path[0]
+			elif len(report_path) > 1:
+				# get the last one (they have a datestring attached to the end, so can sort on that and take the final one)
+				output_reports[contrast_string] = sorted(report_path)[-1]
 			else:
 				raise AmbiguousGseaOutputException('Could not find or uniquely identify a GSEA output for the following contrast: %s' % contrast_string)
 	return output_reports

@@ -113,9 +113,8 @@ rm $DEFAULT_SAM &
 
 #remove the empty tmp directories that STAR did not cleanup
 rmdir $BASE'._tmp'
-rmdir $TEMPDIR
 
-chmod 774 $OUTDIR
+chmod -R 775 $OUTDIR
 
 date
 

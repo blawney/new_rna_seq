@@ -26,6 +26,7 @@ def run(name, project):
 	this_dir = os.path.dirname(os.path.realpath(__file__))
 	project.parameters.add(component_utils.parse_config_file(project, this_dir))
 	component_params = component_utils.parse_config_file(project, this_dir, 'COMPONENT_SPECIFIC')
+	component_params.update( component_utils.parse_config_file(project, this_dir, project.parameters.get('genome')))
 
 	# create a full path to the output directory for rnaseQC's output:
 	output_dir = os.path.join(project.parameters.get('output_location'), component_params.get('rnaseqc_output_dir'))

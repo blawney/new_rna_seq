@@ -62,7 +62,7 @@ def normalize(project, component_params):
 					normalized_filepath, 
 					project.parameters.get('sample_annotation_file'))
 				output_files[normalized_filename] = normalized_filepath
-				normalized_count_files = normalized_filepath
+				normalized_count_files.append(normalized_filepath)
 			else:
 				logging.error('Error in finding the count matrices.  There is no file located at %s' % count_matrix_filepath)
 				raise MissingCountMatrixFileException('No file at %s' % count_matrix_filepath)
