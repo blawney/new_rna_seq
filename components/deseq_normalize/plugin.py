@@ -38,8 +38,11 @@ def run(name, project):
 	# perform the actual normalization:
 	output_files = normalize(project, component_params)
 
+	logging.info('Done with normalize.  Output files: %s' % output_files)
 	# change permissions on those output files:
-	[os.chmod(f, 0775) for f in output_files]
+	[os.chmod(f, 0775) for f in output_files.values()]
+
+	logging.info('Done resetting permissions on the output files.')
 	
 	# create the ComponentOutput object and return it
 	return [component_utils.ComponentOutput(output_files, component_params.get('tab_title'), component_params.get('header_msg'), component_params.get('display_format')),]
