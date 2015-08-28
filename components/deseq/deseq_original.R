@@ -23,25 +23,25 @@ count_data<-count_data[-1]
 # read the annotations and get the conditions in the same order as the columns of the count_data dataframe
 annotations <- read.table(SAMPLE_ANNOTATION_FILE, sep='\t', header = F)
 groups <- annotations[,2]
+
 selected_groups<-c(CONDITION_A, CONDITION_B)
 current_samples<-annotations[annotations[,2] %in% selected_groups,]
 current_groups<-current_samples[[2]]
 
 # subset to only keep samples corresponding to the current groups in the count_data dataframe
-count_data <- count_data[,current_samples[[1]]]
+count_data <- count_data[,as.vector(current_samples[[1]])]
 
 # the number of samples in each contrast group
 num_A = sum(groups == CONDITION_A)
 num_B = sum(groups == CONDITION_B)
-print('here')
-print(head(count_data))
-print(current_groups)
-print('********')
+
 #run the DESeq steps:
 cds=newCountDataSet(count_data, current_groups)
 cds=estimateSizeFactors(cds)
 
-if (num_B<=2 && num_A<=2){
+if (num_B==1 && num_A==1){
+	cds = estimateDispersions( cds, method="blind", sharingMode="fit-only", fitType = "local" )
+}else if (num_B==2 && num_A==2){
 	cds = estimateDispersions( cds, method="blind", sharingMode="fit-only" )
 }else{
 	cds <- estimateDispersions (cds)
@@ -49,7 +49,9 @@ if (num_B<=2 && num_A<=2){
 res=nbinomTest(cds, CONDITION_A, CONDITION_B)
 
 #write the differential expression results to a file:
-write.csv(as.data.frame(res), file=OUTPUT_DESEQ_FILE, row.names=FALSE, quote=FALSE)
+res.df = as.data.frame(res)
+colnames(res.df) <- c('id','baseMean', CONDITION_A, CONDITION_B,'foldChange','log2FoldChange','pval','padj')
+write.csv(res.df, file=OUTPUT_DESEQ_FILE, row.names=FALSE, quote=FALSE)
 
 
 ######### For creating contrast-level heatmap ######################
