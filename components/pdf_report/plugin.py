@@ -129,6 +129,11 @@ def fill_template(template, project, component_params):
 	
 
 
+#TODO: write this!
+def get_diff_exp_gene_summary():
+	pass
+
+
 def compile_report(project, component_params):
 	"""
 	Run the compilation for the latex .tex file that was created

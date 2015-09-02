@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 from matplotlib import rcParams
 import numpy as np
 import matplotlib.patches as mpatches
@@ -50,4 +51,42 @@ def plot_bam_counts(plot_data, filename):
 
 #TODO: write this method!
 def plot_coverage():
-	pass
+	chromosomes = range(1,20)
+	chromosomes = ['chr'+str(s) for s in chromosomes]
+	chromosomes.append('chrX')
+	chromosomes.append('chrY')
+
+	all_regions = [s for s in chromosomes]
+	all_regions.append('chrM')
+
+	n=len(all_regions)
+	num_cols = 3
+	num_rows = n/num_cols+1
+
+
+	data = pd.read_table(g, names=['chrom', 'start', 'end', 'counts'])
+	max_cvg = np.max(data[data['chrom'].isin(chromosomes)].counts)
+
+	fig = plt.figure(figsize=(22,22))
+
+	for i,c in enumerate(all_regions):
+		print i,c
+		chr_data = data[data.chrom == c]
+		ax = fig.add_subplot(num_rows, num_cols, i+1)
+		x=chr_data.start
+		y=chr_data.counts
+		ax.plot(x,y)
+		if c in chromosomes:
+		    ax.set_ylim((0,max_cvg))
+		else:
+		    ax.set_ylim((0,np.max(y)))
+		ax.set_title(c)
+		ax.set_xticks([])
+
+	plt.tight_layout() 
+	plt.savefig(str(g)+".pdf", format="pdf")
+
+
+
+
+
