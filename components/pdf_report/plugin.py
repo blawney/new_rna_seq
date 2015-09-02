@@ -5,6 +5,9 @@ import glob
 import imp
 import subprocess
 import general_plots
+import numpy as np
+import StringIO 
+import jinja2
 
 sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
 
@@ -12,6 +15,11 @@ import component_utils
 
 class PdfReportNotConfiguredForAlignerException(Exception):
 	pass
+
+
+class MissingBamIndexFile(Exception):
+	pass
+
 
 def run(name, project):
 	logging.info('Beginning creation of custom latex report')
@@ -40,7 +48,10 @@ def run(name, project):
 	# create the final output directory, if possible
 	util_methods.create_directory(output_dir, overwrite = True)
 
-	output_file = create_report(project, component_params, extra_params)
+	# read template
+	env = jinja2.Environment(loader=jinja2.FileSystemLoader(this_dir))
+	template = env.get_template(component_params.get('report_template'))
+	output_file = create_report(template, project, component_params, extra_params)
 
 	# change permissions:
 	os.chmod(output_file, 0775)
@@ -50,10 +61,12 @@ def run(name, project):
 	return [ c1 ]
 
 
-def create_report(project, component_params, extra_params = {} ):
+def create_report(template, project, component_params, extra_params = {} ):
 	# returns a dict of file name mapping (e.g. what is displayed as the href element) to the file path
 
 	generate_figures(project, component_params, extra_params)
+
+	fill_template(template, project, component_params)
 
 	compile_report(project, component_params)
 
@@ -67,23 +80,76 @@ def generate_figures(project, component_params, extra_params = {}):
 		# a dict of dicts (sample maps to a dictionary with sample-specific key:value pairs)
 		log_data = star_methods.process_star_logs(project, component_params, extra_params)
 
-		star_methods.plot_read_composition(log_data, extra_params.get('log_targets'), extra_params.get('mapping_composition_fig'))
+		plot_path = os.path.join(component_params.get('report_output_dir'), component_params.get('mapping_composition_fig'))
+		component_params['mapping_composition_fig'] = plot_path
+		star_methods.plot_read_composition(log_data, extra_params.get('log_targets'), plot_path)
 
-		star_methods.plot_total_read_count(log_data, component_params.get('total_reads_fig'))
+		plot_path = os.path.join(component_params.get('report_output_dir'), component_params.get('total_reads_fig'))
+		component_params['total_reads_fig'] = plot_path
+		star_methods.plot_total_read_count(log_data, plot_path)
 
-	# other plots that do not require aligner-specific methods
-	bam_count_data = get_bam_counts()
-	plot_bam_counts(bam_count_data, component_params.get('bamfile_reads_fig'))
+	# other plots that do not require aligner-specific methods:
+
+	# the read counts in the various bam files
+	bam_count_data = get_bam_counts(project, component_params)
+	bam_count_plot_path = os.path.join(component_params.get('report_output_dir'), component_params.get('bamfile_reads_fig'))
+	general_plots.plot_bam_counts(bam_count_data, bam_count_plot_path)
+
+	# the coverage plots for the 'usual' chromosomes
+	# TODO: args
+	general_plots.plot_coverage()
+
+
+def fill_template(template, project, component_params):
+	project_id = os.path.basename(project.parameters.get('project_directory'))
+	output_tex = os.path.join(component_params.get('report_output_dir'), project_id + '.tex')
+	
+	# construct the context:
+
+	sample_and_group_pairs = [ (sample.sample_name, sample.condition) for sample in project.samples ]
+	contrast_pairs = [ (cp[0], cp[1]) for cp in project.contrasts ]
+
+	cvg_figures_dictionary = {sample.sample_name:sample.sample_name + '.' + component_params.get('coverage_plot_suffix') for sample in project.samples}
+
+	diff_exp_genes = get_diff_exp_gene_summary()	
+
+	context = {
+		'sample_and_group_pairs':sample_and_group_pairs,
+		'contrast_pairs':contrast_pairs,
+		'ref_genome_name': project.parameters.get('genome'),
+		'ref_genome_url': project.parameters.get('genome_source_link'),
+		'cvg_plot_mappings': cvg_figures_dictionary,
+		'alignment_performed' : project.parameter.get('skip_align'),
+		'analysis_performed' : project.parameter.get('skip_analysis'),
+		'diff_exp_genes' : diff_exp_genes
+	}
+
+	with open(output_tex, 'w') as outfile:
+		outfile.write(template.render(context))
+	
+
 
 def compile_report(project, component_params):
-	pass
+	"""
+	Run the compilation for the latex .tex file that was created
+	"""
+	this_dir = os.path.dirname(os.path.realpath(__file__))
+	project_id = os.path.basename(project.parameters.get('project_directory'))
+	compile_script = os.path.join(this_dir, component_params.get('compile_script'))
+	output_dir = component_params.get('report_output_dir')
+	args = [compile_script, output_dir, project_id]
+	p = subprocess.Popen(args, stdout = subprocess.PIPE, stderr=subprocess.PIPE)
+	stdout, stderr = p.communicate()
+	logging.info('STDOUT from latex compile script: ')
+	logging.info(stdout)
+	logging.info('STDERR from latex compile script: ')
+	logging.info(stderr)
+	if p.returncode != 0:
+		logging.error('Error running the compile script for the latex report.')
+		raise Exception('Error running the compile script for the latex report.')
 
 
-
-def get_bam_counts(f):
-	#TODO: Write this method.  It is general, so can be used regardless of whether we aligned or not.
-	# Do check issues with starting from existing BAM file-- may not have all the 'levels' of the BAM file, so the plot may not be informative
-
+def get_bam_counts(project, component_params):
 	"""
 	Return a dict of dicts-- first level is the 'types' of the bamfiles.  Those each point at dicts which contain samples-to-counts info
 	"""
@@ -92,25 +158,48 @@ def get_bam_counts(f):
 	wildcard_path = os.path.join(project.parameters.get('project_directory'), project.parameters.get('sample_dir_prefix') + '*', project.parameters.get('alignment_dir'), '*bam')
 	all_bamfiles = glob.glob(wildcard_path)
 
-	# go through those, make sure we have the same for each sample
+	# go through those, make sure we have the same for each sample.  Do this by finding the 'bam types' for each sample, and put into a list of sets.  
+	# then, find the intersection of all these sets-- this way the plots will be complete without missing samples (in the fringe case where samples may have missing BAM files
+	# at a particular 'level'...for instance, if a deduplicated BAM files does not exist for a sample.
+	sample_names = [s.sample_name for s in project.samples]
+	bamfile_basenames = [ os.path.basename(x) for x in all_bamfiles ]
+	bamfile_types_collection = []
+	for s in sample_names:
+		sample_bamfiles = [ b for b in bamfile_basenames if b.startswith(s) ]
+		bamfile_types_tmp = set([ b[len(s)+1:] for b in sample_bamfiles ]) # strip off the sample name, leaving something like 'sort.primary.bam'
+		bamfile_types_collection.append(bamfile_types_tmp)
 
-	# then check that the bai files are there so we can use samtools idxstats
+	# now get the 'type set' (e.g. sorted, primary filtered, etc) for the bam files:
+	bamfile_types_set = reduce(lambda x,y: x.intersection(y), bamfile_types_collection) 
 
-	"""
-	#x=! /cccbstore-rc/projects/cccb/apps/samtools-0.1.19/samtools idxstats $f | cut -f3
-	x = [int(xx) for xx in x]
-	return np.sum(x)
-
-	def get_sample_name(f):
-	return os.path.basename(f).split('.')[0]
-
-	types = ['sort.bam', 'sort.primary.bam', 'sort.primary.dedup.bam']
-	count_dict = {}
-	for t in types:
-	files = sorted(glob.glob('*/star_align/*' + t))
-	count_dict[t] = {get_sample_name(f):get_total_counts(f) for f in files}
-	"""
-
+	# then get the counts for each bamfile.  
+	# !!! check that the bai files are there so we can use samtools idxstats.
+	read_count_dict = {}
+	for t in bamfile_types_set:
+		read_count_dict[t] = {}
+		for s in sample_names:
+			bam_path = os.path.join(project.parameters.get('project_directory'), 
+							project.parameters.get('sample_dir_prefix') + s, 
+							project.parameters.get('alignment_dir'), 
+							s + '.' + t)
+			expected_index_path = bam_path + '.bai'
+			if os.path.isfile(expected_index_path):
+				call_args = [component_params.get('samtools'), component_params.get('samtools_call'), bam_path]
+				p = subprocess.Popen( call_args, stdout = subprocess.PIPE)
+				stdout, stderr = p.communicate()
+				if p.returncode != 0:
+					logging.error('There was an error when calling out to samtools.  The call was: %s' % ' '.join(call_args))
+					logging.error('stdout: %s' % stdout)
+					logging.error('stderr: %s' % stderr)
+					raise Exception('Exception when calling samtools for counting reads in the bam files')
+				else:
+					total_reads = np.sum(np.loadtxt(StringIO.StringIO(stdout), usecols=(2,)))
+					read_count_dict[t][s] = total_reads
+			else:
+				logging.error('Problem with finding a bam index file.  The expected BAM path was: %s' % bam_path)
+				logging.error('The expected BAI file was %s ' % expected_index_path)
+				raise MissingBamIndexFile('Looked for .bai file at the following path: (%s) but none was found.  Need this for counting reads.' % expected_path)
+	return read_count_dict
 
 
 

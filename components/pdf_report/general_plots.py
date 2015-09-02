@@ -47,3 +47,7 @@ def plot_bam_counts(plot_data, filename):
 
 	fig.savefig( filename, bbox_inches='tight')
 
+
+#TODO: write this method!
+def plot_coverage():
+	pass

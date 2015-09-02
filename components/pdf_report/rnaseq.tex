@@ -59,6 +59,8 @@ If the contrast appears reversed in the table above, it does not affect the diff
 \section{Reference genome}
 Your data was aligned against the {{ref_genome_name}} genome, available at \url {{'{'}} {{ ref_genome_url }} {{'}'}}
 
+{% if alignment_performed %}
+
 \section{Alignment}
 Alignments were performed with STAR aligner  (version 2.3.1z4) \cite{star} which is specifically designed for RNA-Seq experiments, which may include multiple splice forms and fusion transcripts.  Not all aligners produce the same results, as sequencing mistake, low--complexity sequences, variants, and other factors are treated differently and may affect the quality of the resulting alignment to the reference genome.\\
 
@@ -98,7 +100,7 @@ Brief alignment metrics are shown below in Figures \ref{fig:relative_composition
      \label{fig:bam_level_counts}
 \end{figure}
 
-
+{% endif %}
 
 \section{Read quantification}
 
@@ -129,6 +131,9 @@ There are several popular methods for normalizing the count matrix to account fo
 Normalized count files are formatted in the same manner as the raw count files and are available at all three levels of BAM file.  When comparing against the differential expression files (explained below), it is often helpful to look at the normalized count levels contained in these files.
 
 We note that normalization measures such as RPKM/FPKM were quite popular in the past, but have since largely been replaced by integer-count based methods such as those in DESeq (and similar packages such as edgeR).
+
+
+{% if analysis_performed %}
 
 \section{Differential expression testing}
 
@@ -165,14 +170,13 @@ For your experiment, we have the following genes marked as differentially expres
     \multicolumn{2}{c|}{Number of Genes}\\ \hline
      Base/Control & Experimental & Upregulated & Downregulated\\ \hline
      {% for control_group, exp_group, upregulated_count, downregulated_count in diff_exp_genes %}
-	{{control_group}} & {{exp_group}} & {{upregulated_count}} & {{downregulated_count}}
-	{% if not loop.last %}
-		{{ '\\' }}
-	{% endif %}
+	{{control_group}} & {{exp_group}} & {{upregulated_count}} & {{downregulated_count}}{{ '\\\\' }}
      {% endfor %}
      \hline
     \end{tabular}
 \end{center}
+
+{% endif %}
 
 \section{Viewing your alignment data}
 
