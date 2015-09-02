@@ -4,6 +4,7 @@ import os
 import glob
 import imp
 import subprocess
+import general_plots
 
 sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
 
@@ -61,10 +62,18 @@ def create_report(project, component_params, extra_params = {} ):
 
 def generate_figures(project, component_params, extra_params = {}):
 	if project.parameters.get('aligner') == 'star' and not project.parameters.get('skip_align'):
+		import star_methods
 
 		# a dict of dicts (sample maps to a dictionary with sample-specific key:value pairs)
-		log_data = process_star_logs(project, component_params, extra_params)
+		log_data = star_methods.process_star_logs(project, component_params, extra_params)
 
+		star_methods.plot_read_composition(log_data, extra_params.get('log_targets'), extra_params.get('mapping_composition_fig'))
+
+		star_methods.plot_total_read_count(log_data, component_params.get('total_reads_fig'))
+
+	# other plots that do not require aligner-specific methods
+	bam_count_data = get_bam_counts()
+	plot_bam_counts(bam_count_data, component_params.get('bamfile_reads_fig'))
 
 def compile_report(project, component_params):
 	pass
@@ -74,6 +83,19 @@ def compile_report(project, component_params):
 def get_bam_counts(f):
 	#TODO: Write this method.  It is general, so can be used regardless of whether we aligned or not.
 	# Do check issues with starting from existing BAM file-- may not have all the 'levels' of the BAM file, so the plot may not be informative
+
+	"""
+	Return a dict of dicts-- first level is the 'types' of the bamfiles.  Those each point at dicts which contain samples-to-counts info
+	"""
+
+	# get all BAM files
+	wildcard_path = os.path.join(project.parameters.get('project_directory'), project.parameters.get('sample_dir_prefix') + '*', project.parameters.get('alignment_dir'), '*bam')
+	all_bamfiles = glob.glob(wildcard_path)
+
+	# go through those, make sure we have the same for each sample
+
+	# then check that the bai files are there so we can use samtools idxstats
+
 	"""
 	#x=! /cccbstore-rc/projects/cccb/apps/samtools-0.1.19/samtools idxstats $f | cut -f3
 	x = [int(xx) for xx in x]
@@ -89,35 +111,6 @@ def get_bam_counts(f):
 	count_dict[t] = {get_sample_name(f):get_total_counts(f) for f in files}
 	"""
 
-
-def process_star_logs(project, component_params, extra_params):
-	"""
-	Returns a dictionary of dictionaries.  The outer dict maps the samples as keys to a dictionary of data parsed from the logfile (Stored in key-value pairs)
-	"""
-	def get_log_contents(f):
-		"""
-		Parses the star-created Log file to get the mapping stats.
-		Input: filepath to Log file
-		Output: dictionary mapping 'log terms' to the values
-		"""
-		d = {}
-		for line in open(f):
-			try:
-				key, val = line.strip().split('|')
-				d[key.strip()] = val.strip()
-			except ValueError as ex:
-				pass
-		return d
-
-
-	wildcard_path = os.path.join( project.parameters.get('project_directory') , project.parameters.get('sample_dir_prefix') + '*', project.parameters.get('alignment_dir'), '*' + extra_params.get('star_log_suffix'))
-	logfiles = glob.glob(wildcard_path)
-	#TODO: get a list of the log file pahts
-	d = {}
-		for log in logfiles:
-			sample = os.path.basename(log)[:-len(suffix)]
-			d[sample] = get_log_contents(log)
-	return d
 
 
 
