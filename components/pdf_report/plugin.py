@@ -75,12 +75,11 @@ def create_report(template, project, component_params, extra_params = {} ):
 
 
 def generate_figures(project, component_params, extra_params = {}):
-	print 'in gen figs'
+
 	if project.parameters.get('aligner') == 'star' and not project.parameters.get('skip_align'):
 
 		# a dict of dicts (sample maps to a dictionary with sample-specific key:value pairs)
 		log_data = star_methods.process_star_logs(project, extra_params)
-		print log_data
 		plot_path = os.path.join(component_params.get('report_output_dir'), extra_params.get('mapping_composition_fig'))
 		component_params['mapping_composition_fig'] = plot_path
 		star_methods.plot_read_composition(log_data, extra_params.get('log_targets'), plot_path, extra_params.get('mapping_composition_colors'))
@@ -97,7 +96,6 @@ def generate_figures(project, component_params, extra_params = {}):
 	general_plots.plot_bam_counts(bam_count_data, bam_count_plot_path)
 
 	# the coverage plots for the 'usual' chromosomes
-	# TODO: args
 	calculate_coverage_data(project, component_params)
 	general_plots.plot_coverage(project, component_params)
 

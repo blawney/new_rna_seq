@@ -3,6 +3,8 @@ import pandas as pd
 from matplotlib import rcParams
 import numpy as np
 import matplotlib.patches as mpatches
+import glob
+import os
 
 # some reasonable colors for this plot
 colors = ["#24476B", "#90BA6E", "#9F5845"]
@@ -16,7 +18,6 @@ def plot_bam_counts(plot_data, filename):
 	plot_data is a dictionary of nested dictionaries.  The first level of the mapping has the BAM 'level' (e.g. sorted, deduped, etc)
 	mapping to a dictionary of sample-to-integer key-value pairs.  filename is just the full path to the output figure
 	"""
-	print plot_data
 	N = len(plot_data[plot_data.keys()[0]].keys())
 	width = 10.0
 	height = 0.8 * N
@@ -26,25 +27,19 @@ def plot_bam_counts(plot_data, filename):
 
 	legend_handles = []
 	bam_types = sorted(plot_data.keys(), comparer)
-	print plot_data.keys()
 	for i,bam_level in enumerate(bam_types):
-		print bam_level
 		counts_dict = plot_data[bam_level]
 		samples = sorted(counts_dict.keys())
 		points = [ counts_dict[s] for s in samples ]
 		legend_handles.append(mpatches.Patch(color=colors[i], alpha=(0.4+0.3*i),label=bam_level))
 		ax.fill_betweenx(y_pos, points, color = colors[i], alpha=(0.4+0.3*i))
 
-	for l in legend_handles:
-		print l.get_label()
 	ax.yaxis.set_ticks(y_pos)
 	ax.yaxis.set_ticklabels(samples)
 	ax.yaxis.set_tick_params(pad=10)
 	ax.set_ylim([-0.75, N-0.25])
 	ax.xaxis.grid(True)
 	ax.yaxis.grid(True)
-
-	print ax
 
 	font={'family': 'serif', 'size':16}
 	plt.rc("font", **font)
@@ -63,7 +58,7 @@ def plot_coverage(project, component_params):
 	num_cols = 3
 	num_rows = n/num_cols+1
 
-	for sample in project.samples:
+	for sample in project.samples[:2]:
 		cvg_glob = glob.glob(os.path.join( component_params.get('report_output_dir'), sample.sample_name + '*' + component_params.get('coverage_file_suffix')))
 		if len(cvg_glob) == 1:
 			cvg_filepath = cvg_glob[0]
@@ -80,11 +75,13 @@ def plot_coverage(project, component_params):
 				xvals = np.zeros(2*L)
 				xvals[0] = chr_data.start.iloc[0]
 				xvals[-1] = chr_data.end.iloc[-1]
-				xvals[1:-1] = np.repeat(df.end.iloc[:-1].values,2)
+				xvals[1:-1] = np.repeat(chr_data.end.iloc[:-1].values,2)
 
 				yvals = np.repeat(chr_data.counts.values,2)
 				ax.plot(xvals,yvals)
 				ax.set_ylim((0, 1.05 * np.max(yvals)))
+				if i==0:
+					ax.set_ylabel('Depth')
 				ax.set_title(c)
 				ax.set_xticks([])
 

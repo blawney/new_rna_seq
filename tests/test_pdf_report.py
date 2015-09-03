@@ -66,27 +66,31 @@ class TestPdfReportGenerator(unittest.TestCase, ComponentTester):
 		"""
 		
 		project = Project()
-		parameters = {'aligner':'star', 'skip_align':False, 'sample_dir_prefix': 'Sample_', 'alignment_dir': 'aln', 'project_directory': 'foo'}
+		parameters = {'aligner':'star', 'skip_align':False, 'sample_dir_prefix': 'Sample_', 'alignment_dir': 'aln', 'project_directory': 'foo', 'chromosomes':['chr1', 'chr2', 'chrM']}
 		project.parameters = parameters
+		
 		component_params = cp.read_config(os.path.join(root, 'components', 'pdf_report', 'report.cfg'), 'COMPONENT_SPECIFIC')
-		print component_params
 		extra_params = cp.read_config(os.path.join(root, 'components', 'pdf_report', 'report.cfg'), 'STAR')
-		print extra_params
+
+		mock_sample_ids = [os.path.basename(x).split('.')[0] for x in glob.glob(os.path.join('test_data', '*' + component_params.get('coverage_file_suffix')))]		
+		project.samples = [Sample(x, 'X') for x in mock_sample_ids ]		
+
 		component_params['report_output_dir'] = os.path.join(os.path.abspath(os.path.dirname(__file__)), test_output_dir, component_params.get('report_output_dir'))
 		if not os.path.isdir(component_params['report_output_dir']):
 			os.mkdir(component_params['report_output_dir'])
 
-		#self.module.generate_figures.star_methods.process_star_logs = mock.Mock()
-		print '?'*50
+		# link the test files so they 'appear' in the correct location:
+		mock_sample_ids = [os.symlink(os.path.abspath(x), os.path.join(component_params['report_output_dir'], os.path.basename(x))) for x in glob.glob(os.path.join('test_data', '*' + component_params.get('coverage_file_suffix')))]		
+		
+
 		mock_log_data = mock_log_data_structure(project, extra_params)
-		print '*'*50
 		self.module.star_methods.process_star_logs = mock.Mock()
 		self.module.star_methods.process_star_logs.return_value = mock_log_data
 		
 		self.module.get_bam_counts = mock.Mock()
 		self.module.get_bam_counts.return_value = mock_bam_counts(mock_log_data.keys())
-
-		#print self.module.generate_figures.star_methods.process_star_logs()
+		self.module.calculate_coverage_data = mock.Mock()
+		self.module.calculate_coverage_data.return_value = None
 		self.module.generate_figures(project, component_params, extra_params)
 
 		
