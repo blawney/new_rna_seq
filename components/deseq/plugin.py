@@ -3,6 +3,8 @@ import sys
 import os
 import imp
 import subprocess
+import numpy as np
+import pandas as pd
 
 sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
 
@@ -38,6 +40,9 @@ def run(name, project):
 
 	deseq_output_files, heatmap_files = call_deseq(project, component_params)
 
+	# write a summary of the number of differentially expressed genes
+	create_diff_exp_summary(deseq_output_files)
+
 	# change permissions:
 	[os.chmod(f,0775) for f in deseq_output_files.values()]
 	[os.chmod(f,0775) for f in heatmap_files.values()]
@@ -46,6 +51,20 @@ def run(name, project):
 	c1 = component_utils.ComponentOutput(deseq_output_files, component_params.get('deseq_tab_title'), component_params.get('deseq_header_msg'), component_params.get('deseq_display_format'))
 	c2 = component_utils.ComponentOutput(heatmap_files, component_params.get('heatmap_tab_title'), component_params.get('heatmap_header_msg'), component_params.get('heatmap_display_format'))
 	return [ c1, c2 ]
+
+
+def create_diff_exp_summary(deseq_files, project, component_params):
+	summary_filepath = os.path.join(component_params.get('deseq_output_dir'), component_params.get('summary_file'))
+	project.diff_exp_summary_filepath = summary_filepath
+	with open(summary_filepath, 'w') as outfile:
+		for f in deseq_files.values():
+			exp_condition, ctrl_condition = os.path.basename(f).split('.')[0].split(component_params.get('deseq_contrast_flag'))
+
+			# load the data and count
+			data = pd.read_table(f, sep=',')
+			downreg_count = np.sum((data['padj']<=0.05) & (data['log2FoldChange'] < 0))
+			upreg_count = np.sum((data['padj']<=0.05) & (data['log2FoldChange'] > 0))
+			outfile.write('\t'.join([ctrl_condition, exp_condition, str(upreg_count), str(downreg_count)]) + '\n')
 
 
 def call_deseq(project, component_params):
