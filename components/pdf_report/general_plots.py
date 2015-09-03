@@ -51,16 +51,7 @@ def plot_bam_counts(plot_data, filename):
 
 def plot_coverage(project, component_params):
 
-	#TODO: change this to accomodate different genomes! (do they have chr prefix?  mouse and human with different number of chr)
-
-	# define the 'usual' chromosomes to plot (skip unplaced contigs, etc)
-	chromosomes = range(1,20)
-	chromosomes = ['chr'+str(s) for s in chromosomes]
-	chromosomes.append('chrX')
-	chromosomes.append('chrY')
-
-	all_regions = [s for s in chromosomes]
-	all_regions.append('chrM')
+	all_regions = project.parameters.get('chromosomes')
 
 	# define the number of rows/cols for the 'grid' of coverage figures
 	n=len(all_regions)
@@ -72,25 +63,29 @@ def plot_coverage(project, component_params):
 		if len(cvg_glob) == 1:
 			cvg_filepath = cvg_glob[0]
 			data = pd.read_table(cvg_filepath, names=['chrom', 'start', 'end', 'counts'])
-			max_cvg = np.max(data[data['chrom'].isin(chromosomes)].counts)
 
 			fig = plt.figure(figsize=(22,22))
 
 			for i,c in enumerate(all_regions):
 				chr_data = data[data.chrom == c]
+				L = chr_data.shape[0]
+
 				ax = fig.add_subplot(num_rows, num_cols, i+1)
-				x=chr_data.start
-				y=chr_data.counts
-				ax.plot(x,y)
-				if c in chromosomes:
-				    ax.set_ylim((0,max_cvg))
-				else:
-				    ax.set_ylim((0,np.max(y)))
+
+				xvals = np.zeros(2*L)
+				xvals[0] = chr_data.start.iloc[0]
+				xvals[-1] = chr_data.end.iloc[-1]
+				xvals[1:-1] = np.repeat(df.end.iloc[:-1].values,2)
+
+				yvals = np.repeat(chr_data.counts.values,2)
+				ax.plot(xvals,yvals)
+				ax.set_ylim((0, 1.05 * np.max(yvals)))
 				ax.set_title(c)
 				ax.set_xticks([])
 
-			plt.tight_layout() 
-			plt.savefig(str(g)+".pdf", format="pdf")
+			plt.tight_layout()
+			output_plot = cvg_filepath[:-len(component_params.get('coverage_file_suffix'))] + component_params.get('coverage_plot_suffix')
+			plt.savefig(output_plot)
 
 
 
