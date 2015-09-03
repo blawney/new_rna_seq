@@ -1,13 +1,16 @@
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import numpy as np
+import os
+import glob
 rcParams['font.size'] = 12.0
 
 
-def process_star_logs(project, component_params, extra_params):
+def process_star_logs(project, extra_params):
 	"""
 	Returns a dictionary of dictionaries.  The outer dict maps the samples as keys to a dictionary of data parsed from the logfile (Stored in key-value pairs)
 	"""
+	print 'here1'
 	def get_log_contents(f):
 		"""
 		Parses the star-created Log file to get the mapping stats.
@@ -27,9 +30,9 @@ def process_star_logs(project, component_params, extra_params):
 	wildcard_path = os.path.join( project.parameters.get('project_directory') , project.parameters.get('sample_dir_prefix') + '*', project.parameters.get('alignment_dir'), '*' + extra_params.get('star_log_suffix'))
 	logfiles = glob.glob(wildcard_path)
 	d = {}
-		for log in logfiles:
-			sample = os.path.basename(log)[:-len(suffix)]
-			d[sample] = get_log_contents(log)
+	for log in logfiles:
+		sample = os.path.basename(log)[:-len(extra_params.get('star_log_suffix'))]
+		d[sample] = get_log_contents(log)
 	return d
 
 
@@ -44,12 +47,13 @@ def get_vals(log_data, t, f):
 	return vals
 
 
-def plot_read_composition(log_data, targets, filename):
+def plot_read_composition(log_data, targets, filename, colors):
 	"""
 	Plots the relative abundance of alignments for each sample
 	Receives a dict of dicts (sample names each mapping to a dictionary of log data about that sample), 
 	the 'targets' (which is a list of strings to select data from the dictionary), and the output filepath (full path!)
 	"""
+	print 'xxxx'*10
 	samples = log_data.keys()
 	N = len(samples)
 	width = 10.0

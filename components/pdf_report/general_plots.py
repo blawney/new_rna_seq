@@ -16,8 +16,8 @@ def plot_bam_counts(plot_data, filename):
 	plot_data is a dictionary of nested dictionaries.  The first level of the mapping has the BAM 'level' (e.g. sorted, deduped, etc)
 	mapping to a dictionary of sample-to-integer key-value pairs.  filename is just the full path to the output figure
 	"""
-
-	N = len(samples)
+	print plot_data
+	N = len(plot_data[plot_data.keys()[0]].keys())
 	width = 10.0
 	height = 0.8 * N
 	fig = plt.figure(figsize=(width, height))
@@ -25,14 +25,18 @@ def plot_bam_counts(plot_data, filename):
 	y_pos = np.arange(N)
 
 	legend_handles = []
-	bam_types = plot_data.keys().sort(comparer)
+	bam_types = sorted(plot_data.keys(), comparer)
+	print plot_data.keys()
 	for i,bam_level in enumerate(bam_types):
+		print bam_level
 		counts_dict = plot_data[bam_level]
 		samples = sorted(counts_dict.keys())
 		points = [ counts_dict[s] for s in samples ]
 		legend_handles.append(mpatches.Patch(color=colors[i], alpha=(0.4+0.3*i),label=bam_level))
 		ax.fill_betweenx(y_pos, points, color = colors[i], alpha=(0.4+0.3*i))
 
+	for l in legend_handles:
+		print l.get_label()
 	ax.yaxis.set_ticks(y_pos)
 	ax.yaxis.set_ticklabels(samples)
 	ax.yaxis.set_tick_params(pad=10)
@@ -40,6 +44,7 @@ def plot_bam_counts(plot_data, filename):
 	ax.xaxis.grid(True)
 	ax.yaxis.grid(True)
 
+	print ax
 
 	font={'family': 'serif', 'size':16}
 	plt.rc("font", **font)
