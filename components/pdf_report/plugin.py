@@ -97,7 +97,30 @@ def generate_figures(project, component_params, extra_params = {}):
 
 	# the coverage plots for the 'usual' chromosomes
 	# TODO: args
-	general_plots.plot_coverage()
+	calculate_coverage_data(project, component_params)
+	general_plots.plot_coverage(project, component_params)
+
+
+
+def calculate_coverage_data(project, component_params):
+	target_bam_suffix = 'sort.primary.bam'
+	for sample in project.samples:
+		target_bamfile = [s for s in sample.bamfiles if s.endswith(target_bam_suffix)]
+		if len(target_bamfile) == 1:
+			bam = target_bamfile[0]
+			cvg_filepath = os.path.join( component_params.get('report_output_dir'), sample.sample_name + '.' + target_bam_suffix + '.' + component_params.get('coverage_file_suffix'))
+			bedtools_args = [ component_params.get('bedtools_path'), component_params.get('bedtools_cmd'), '-ibam', bam, '-bga']
+
+			with open(cvg_filepath, 'w') as cvg_filehandle:
+				p = subprocess.Popen(bedtools_args, stderr=subprocess.STDOUT, stdout=cvg_filehandle)
+			stdout, stderr = p.communicate()
+
+			logging.info('STDERR from bedtools genomecov call: ')
+			logging.info(stderr)
+
+		else:
+			logging.error('Could not find a BAM file ending with %s for sample %s.  Not exiting, but this is likely indicative of a problem')
+
 
 
 def fill_template(template, project, component_params):
@@ -111,7 +134,7 @@ def fill_template(template, project, component_params):
 
 	cvg_figures_dictionary = {sample.sample_name:sample.sample_name + '.' + component_params.get('coverage_plot_suffix') for sample in project.samples}
 
-	diff_exp_genes = get_diff_exp_gene_summary()	
+	diff_exp_genes = get_diff_exp_gene_summary(project)	
 
 	context = {
 		'sample_and_group_pairs':sample_and_group_pairs,
@@ -129,9 +152,8 @@ def fill_template(template, project, component_params):
 	
 
 
-#TODO: write this!
-def get_diff_exp_gene_summary():
-	pass
+def get_diff_exp_gene_summary(project):
+	return [tuple(line.strip().split('\t')) for line in open(project.diff_exp_summary_filepath)]
 
 
 def compile_report(project, component_params):

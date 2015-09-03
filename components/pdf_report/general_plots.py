@@ -49,8 +49,11 @@ def plot_bam_counts(plot_data, filename):
 	fig.savefig( filename, bbox_inches='tight')
 
 
-#TODO: write this method!
-def plot_coverage():
+def plot_coverage(project, component_params):
+
+	#TODO: change this to accomodate different genomes! (do they have chr prefix?  mouse and human with different number of chr)
+
+	# define the 'usual' chromosomes to plot (skip unplaced contigs, etc)
 	chromosomes = range(1,20)
 	chromosomes = ['chr'+str(s) for s in chromosomes]
 	chromosomes.append('chrX')
@@ -59,32 +62,35 @@ def plot_coverage():
 	all_regions = [s for s in chromosomes]
 	all_regions.append('chrM')
 
+	# define the number of rows/cols for the 'grid' of coverage figures
 	n=len(all_regions)
 	num_cols = 3
 	num_rows = n/num_cols+1
 
+	for sample in project.samples:
+		cvg_glob = glob.glob(os.path.join( component_params.get('report_output_dir'), sample.sample_name + '*' + component_params.get('coverage_file_suffix'))
+		if len(cvg_glob) == 1:
+			cvg_filepath = cvg_glob[0]
+			data = pd.read_table(cvg_filepath, names=['chrom', 'start', 'end', 'counts'])
+			max_cvg = np.max(data[data['chrom'].isin(chromosomes)].counts)
 
-	data = pd.read_table(g, names=['chrom', 'start', 'end', 'counts'])
-	max_cvg = np.max(data[data['chrom'].isin(chromosomes)].counts)
+			fig = plt.figure(figsize=(22,22))
 
-	fig = plt.figure(figsize=(22,22))
+			for i,c in enumerate(all_regions):
+				chr_data = data[data.chrom == c]
+				ax = fig.add_subplot(num_rows, num_cols, i+1)
+				x=chr_data.start
+				y=chr_data.counts
+				ax.plot(x,y)
+				if c in chromosomes:
+				    ax.set_ylim((0,max_cvg))
+				else:
+				    ax.set_ylim((0,np.max(y)))
+				ax.set_title(c)
+				ax.set_xticks([])
 
-	for i,c in enumerate(all_regions):
-		print i,c
-		chr_data = data[data.chrom == c]
-		ax = fig.add_subplot(num_rows, num_cols, i+1)
-		x=chr_data.start
-		y=chr_data.counts
-		ax.plot(x,y)
-		if c in chromosomes:
-		    ax.set_ylim((0,max_cvg))
-		else:
-		    ax.set_ylim((0,np.max(y)))
-		ax.set_title(c)
-		ax.set_xticks([])
-
-	plt.tight_layout() 
-	plt.savefig(str(g)+".pdf", format="pdf")
+			plt.tight_layout() 
+			plt.savefig(str(g)+".pdf", format="pdf")
 
 
 
