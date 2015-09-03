@@ -59,7 +59,7 @@ def plot_coverage(project, component_params):
 	num_rows = n/num_cols+1
 
 	for sample in project.samples:
-		cvg_glob = glob.glob(os.path.join( component_params.get('report_output_dir'), sample.sample_name + '*' + component_params.get('coverage_file_suffix'))
+		cvg_glob = glob.glob(os.path.join( component_params.get('report_output_dir'), sample.sample_name + '*' + component_params.get('coverage_file_suffix')))
 		if len(cvg_glob) == 1:
 			cvg_filepath = cvg_glob[0]
 			data = pd.read_table(cvg_filepath, names=['chrom', 'start', 'end', 'counts'])
