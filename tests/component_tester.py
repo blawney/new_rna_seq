@@ -15,9 +15,11 @@ class ComponentTester(object):
 		self.module_directory = path.join(root, module_directory)
 
 		try:
+			sys.path.append(self.module_directory)
 			module_name = 'plugin' 
 			fileobj, filename, description = imp.find_module(module_name, [self.module_directory])
 			self.module = imp.load_module(module_name, fileobj, filename, description)
-		except ImportError:
-			print 'Could not load the plugin module in %s ' % location
+		except ImportError as ex:
+			print 'Could not load the plugin module in %s ' % module_directory
+			print ex.message
 			sys.exit(1) 
