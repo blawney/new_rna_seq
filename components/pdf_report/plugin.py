@@ -152,9 +152,10 @@ def fill_template(template, project, component_params):
 		'ref_genome_url': project.parameters.get('genome_source_link'),
 		'cvg_plot_mappings': cvg_figures_dictionary,
 		'alignment_performed' : not project.parameters.get('skip_align'),
-		'analysis_performed' : project.parameters.get('skip_analysis'),
+		'analysis_performed' : not project.parameters.get('skip_analysis'),
 		'diff_exp_genes' : diff_exp_genes,
-		'project_id': escape(project_id)
+		'project_id': escape(project_id),
+		'bam_filter_level': project.parameters.get('bam_filter_level')
 	}
 
 	with open(output_tex, 'w') as outfile:
