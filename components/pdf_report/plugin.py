@@ -104,8 +104,11 @@ def generate_figures(project, component_params, extra_params = {}):
 
 def calculate_coverage_data(project, component_params):
 	target_bam_suffix = project.parameters.get('bam_filter_level')
+
 	for sample in project.samples:
-		target_bamfile = [s for s in sample.bamfiles if s.endswith(target_bam_suffix)]
+
+		target_bamfile = [s for s in sample.bamfiles if s.lower().endswith(target_bam_suffix.lower() + '.bam')]
+
 		if len(target_bamfile) == 1:
 			bam = target_bamfile[0]
 			cvg_filepath = os.path.join( component_params.get('report_output_dir'), sample.sample_name + '.' + target_bam_suffix + '.' + component_params.get('coverage_file_suffix'))

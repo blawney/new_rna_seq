@@ -10,6 +10,7 @@ import shutil
 import imp
 import numpy as np
 import jinja2
+import __builtin__
 
 from os import path
 root =  path.dirname( path.dirname( path.abspath(__file__) ) ) 
@@ -38,7 +39,6 @@ def mock_log_data_structure(project, extra_params):
 	data = test_module.process_star_logs(project, extra_params)
 
 	return data
-
 
 
 def mock_bam_counts(sample_ids):
@@ -134,4 +134,63 @@ class TestPdfReportGenerator(unittest.TestCase, ComponentTester):
 
 		self.module.fill_template(template, project, component_params)
 		self.module.compile_report(project, component_params)
+
+
+	def test_system_call_to_bedtools(self):
+
+		project = Project()
+		parameters = {'bam_filter_level':'sort.primary', 'project_directory': 'abc/foo/AB_12345', 
+				'genome': 'hg19', 
+				'genome_source_link':'ftp://ftp.ensembl.org/pub/release-75/fasta/homo_sapiens/dna/', 
+				'skip_align':False, 
+				'skip_analysis':False}
+
+		project.parameters = parameters
+
+		mock_dir = '/abc/def/'
+		mock_sample_names = ['AAA','BBB','CCC']
+		levels = ['sort.bam','sort.primary.bam','sort.primary.dedup.bam']
+
+		all_samples = []
+		for sn in mock_sample_names:
+			bamfiles = map(lambda x: os.path.join(mock_dir, sn + '.' + x), levels)
+			s = Sample(sn, 'X', bamfiles = bamfiles)
+			all_samples.append(s)
+
+		project.samples = all_samples
+
+		component_params = cp.read_config(os.path.join(root, 'components', 'pdf_report', 'report.cfg'), 'COMPONENT_SPECIFIC')	
+
+		self.module.subprocess.Popen = mock.Mock()
 		
+		mock_process = mock.Mock()
+		mock_process.communicate.return_value = (('abc', 'def'))
+		mock_process.returncode = 0
+		self.module.subprocess.Popen.return_value = mock_process
+		self.module.subprocess.STDOUT = 'abc'
+		self.module.subprocess.STDERR = 'def'
+		
+
+		m = mock.mock_open()
+		with mock.patch.object(__builtin__, 'open', m) as x:
+			expected_calls = [
+				mock.call([ component_params.get('bedtools_path'), component_params.get('bedtools_cmd'), '-ibam', '/abc/def/AAA.sort.primary.bam', '-bga'],  stderr='abc', stdout=m()),
+				mock.call().communicate(),
+				mock.call([ component_params.get('bedtools_path'), component_params.get('bedtools_cmd'), '-ibam', '/abc/def/BBB.sort.primary.bam', '-bga'], stderr='abc', stdout=m()),
+				mock.call().communicate(),
+				mock.call([ component_params.get('bedtools_path'), component_params.get('bedtools_cmd'), '-ibam', '/abc/def/CCC.sort.primary.bam', '-bga'], stderr='abc', stdout=m()),
+				mock.call().communicate()]
+			self.module.calculate_coverage_data(project, component_params)
+
+		self.module.subprocess.Popen.assert_has_calls(expected_calls) 
+		
+
+
+
+
+
+
+
+
+
+
