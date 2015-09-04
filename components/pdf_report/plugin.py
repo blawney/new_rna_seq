@@ -9,6 +9,7 @@ import numpy as np
 import StringIO 
 import jinja2
 import star_methods
+import shutil
 
 sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
 
@@ -102,7 +103,7 @@ def generate_figures(project, component_params, extra_params = {}):
 
 
 def calculate_coverage_data(project, component_params):
-	target_bam_suffix = 'sort.primary.bam'
+	target_bam_suffix = project.parameters.get('bam_filter_level')
 	for sample in project.samples:
 		target_bamfile = [s for s in sample.bamfiles if s.endswith(target_bam_suffix)]
 		if len(target_bamfile) == 1:
@@ -123,17 +124,26 @@ def calculate_coverage_data(project, component_params):
 
 
 def fill_template(template, project, component_params):
+
+	# since inserting into a latex doc, need to escape underscores!
+	escape = lambda x: x.replace('_', '\_')
+
 	project_id = os.path.basename(project.parameters.get('project_directory'))
 	output_tex = os.path.join(component_params.get('report_output_dir'), project_id + '.tex')
 	
 	# construct the context:
 
-	sample_and_group_pairs = [ (sample.sample_name, sample.condition) for sample in project.samples ]
-	contrast_pairs = [ (cp[0], cp[1]) for cp in project.contrasts ]
+	sample_and_group_pairs = [ (escape(sample.sample_name), escape(sample.condition)) for sample in project.samples ]
+	contrast_pairs = [ (escape(cp[0]), escape(cp[1])) for cp in project.contrasts ]
 
-	cvg_figures_dictionary = {sample.sample_name:sample.sample_name + '.' + component_params.get('coverage_plot_suffix') for sample in project.samples}
+	full_suffix = project.parameters.get('bam_filter_level') + '.' + component_params.get('coverage_plot_suffix')
+	stripped_suffix = full_suffix[:-len(full_suffix.split('.')[-1])-1]
+	cvg_figures_dictionary = {escape(sample.sample_name):sample.sample_name + '.' + stripped_suffix for sample in project.samples}
 
-	diff_exp_genes = get_diff_exp_gene_summary(project)	
+	diff_exp_genes = get_diff_exp_gene_summary(project)
+	for item in diff_exp_genes:
+		item[0] = escape(item[0])
+		item[1] = escape(item[1])	
 
 	context = {
 		'sample_and_group_pairs':sample_and_group_pairs,
@@ -141,18 +151,19 @@ def fill_template(template, project, component_params):
 		'ref_genome_name': project.parameters.get('genome'),
 		'ref_genome_url': project.parameters.get('genome_source_link'),
 		'cvg_plot_mappings': cvg_figures_dictionary,
-		'alignment_performed' : project.parameter.get('skip_align'),
-		'analysis_performed' : project.parameter.get('skip_analysis'),
-		'diff_exp_genes' : diff_exp_genes
+		'alignment_performed' : not project.parameters.get('skip_align'),
+		'analysis_performed' : project.parameters.get('skip_analysis'),
+		'diff_exp_genes' : diff_exp_genes,
+		'project_id': escape(project_id)
 	}
 
 	with open(output_tex, 'w') as outfile:
 		outfile.write(template.render(context))
-	
+	shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)),component_params.get('bibtex_file')), component_params.get('report_output_dir'))
 
 
 def get_diff_exp_gene_summary(project):
-	return [tuple(line.strip().split('\t')) for line in open(project.diff_exp_summary_filepath)]
+	return [line.strip().split('\t') for line in open(project.diff_exp_summary_filepath)]
 
 
 def compile_report(project, component_params):

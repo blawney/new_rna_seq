@@ -9,6 +9,7 @@ import glob
 import shutil
 import imp
 import numpy as np
+import jinja2
 
 from os import path
 root =  path.dirname( path.dirname( path.abspath(__file__) ) ) 
@@ -80,7 +81,7 @@ class TestPdfReportGenerator(unittest.TestCase, ComponentTester):
 			os.mkdir(component_params['report_output_dir'])
 
 		# link the test files so they 'appear' in the correct location:
-		mock_sample_ids = [os.symlink(os.path.abspath(x), os.path.join(component_params['report_output_dir'], os.path.basename(x))) for x in glob.glob(os.path.join('test_data', '*' + component_params.get('coverage_file_suffix')))]		
+		[os.symlink(os.path.abspath(x), os.path.join(component_params['report_output_dir'], os.path.basename(x))) for x in glob.glob(os.path.join('test_data', '*' + component_params.get('coverage_file_suffix')))]		
 		
 
 		mock_log_data = mock_log_data_structure(project, extra_params)
@@ -93,4 +94,44 @@ class TestPdfReportGenerator(unittest.TestCase, ComponentTester):
 		self.module.calculate_coverage_data.return_value = None
 		self.module.generate_figures(project, component_params, extra_params)
 
+
+	def test_fill_template(self):
+		
+		project = Project()
+		parameters = {'bam_filter_level':'sort.primary', 'project_directory': 'abc/foo/AB_12345', 
+				'genome': 'hg19', 
+				'genome_source_link':'ftp://ftp.ensembl.org/pub/release-75/fasta/homo_sapiens/dna/', 
+				'skip_align':False, 
+				'skip_analysis':False}
+
+		project.parameters = parameters
+		
+		component_params = cp.read_config(os.path.join(root, 'components', 'pdf_report', 'report.cfg'), 'COMPONENT_SPECIFIC')
+		extra_params = cp.read_config(os.path.join(root, 'components', 'pdf_report', 'report.cfg'), 'STAR')
+
+		mock_sample_ids = [os.path.basename(x).split('.')[0] for x in glob.glob(os.path.join('test_data', '*' + component_params.get('coverage_file_suffix')))]		
+		project.samples = [Sample(x, 'X') for x in mock_sample_ids ]
+		project.contrasts = [('X','Y'),('X','Z'),('Y','Z')]		
+
+		component_params['report_output_dir'] = os.path.join(os.path.abspath(os.path.dirname(__file__)), test_output_dir, component_params.get('report_output_dir'))
+		if not os.path.isdir(component_params['report_output_dir']):
+			os.mkdir(component_params['report_output_dir'])
+
+		# link figures so they appear where they should be.
+		figure_list = glob.glob(os.path.join(os.path.dirname(__file__), 'test_data', '*' + component_params.get('coverage_plot_suffix')))
+		figure_list += [os.path.join(os.path.dirname(__file__), 'test_data', 'bamfile_reads.pdf'), 
+				os.path.join(os.path.dirname(__file__), 'test_data', 'mapping_composition.pdf'), 
+				os.path.join(os.path.dirname(__file__), 'test_data', 'total_reads.pdf'),
+				os.path.join('components', 'pdf_report', 'igv_typical.png'),
+				os.path.join('components', 'pdf_report', 'igv_duplicates.png')]
+		[os.symlink(os.path.join(root, f),  os.path.join(component_params['report_output_dir'], os.path.basename(f))) for f in figure_list]
+	
+		self.module.get_diff_exp_gene_summary  = mock.Mock()
+		self.module.get_diff_exp_gene_summary.return_value = [['X','Y', 100,200],['Y_1','Z_2', 400, 300],['X_2','Z_3', 150,300]]
+
+		env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.join(root, 'components', 'pdf_report')))
+		template = env.get_template(component_params.get('report_template'))
+
+		self.module.fill_template(template, project, component_params)
+		self.module.compile_report(project, component_params)
 		

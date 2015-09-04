@@ -72,7 +72,7 @@ def plot_read_composition(log_data, targets, filename, colors):
 		bar_groups.append(ax.barh(y_pos, vals, align='center', alpha=0.6, left=prior, color=colors[i]))
 		prior += vals
     
-	ax.legend(bar_groups, targets, loc=9,  bbox_to_anchor=(0.5, -0.05))
+	ax.legend(bar_groups, targets, loc=9,  bbox_to_anchor=(0.5, -0.10))
 	ax.yaxis.set_ticks(y_pos)
 	ax.yaxis.set_ticklabels(samples)
 	ax.yaxis.set_tick_params(pad=10)

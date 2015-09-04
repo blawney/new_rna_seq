@@ -19,7 +19,7 @@
  bottom=20mm,
  }
 
-\title{RNA-Seq Analysis Report}
+\title{RNA-Seq Analysis Report \\ {{project_id}}}
 \author{CCCB}
 
 \begin{document}
@@ -81,22 +81,22 @@ Brief alignment metrics are shown below in Figures \ref{fig:relative_composition
 
 \begin{figure}[ht!]
   \centering
-    \includegraphics[width=0.75\textwidth]{ex_countplot}
+    \includegraphics[width=0.75\textwidth]{mapping_composition}
     \caption{The relative composition of reads from alignment.}
     \label{fig:relative_composition}
 \end{figure}
 
 \begin{figure}[ht!]
   \centering
-    \includegraphics[width=0.75\textwidth]{total_read_plot}
+    \includegraphics[width=0.75\textwidth]{total_reads}
     \caption{The total reads from the experiment.}
      \label{fig:total_counts}
 \end{figure}
 
 \begin{figure}[ht!]
   \centering
-    \includegraphics[width=0.75\textwidth]{bam_counts}
-    \caption{The total reads at each filter level}
+    \includegraphics[width=0.75\textwidth]{bamfile_reads}
+    \caption{The total reads at each filter level.}
      \label{fig:bam_level_counts}
 \end{figure}
 
