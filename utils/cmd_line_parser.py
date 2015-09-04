@@ -93,6 +93,13 @@ def setup_args():
 				help="A tag (string) for selecting a particular set of (existing) BAM files to use with analysis.",
 				dest="target_bam")
 
+	run_subparser.add_argument("-level", "--bam-level",
+				required=False,
+				default='sort.primary',
+				choices=['sort','sort.primary','sort.primary.dedup'],
+				help="The filtering level of BAM file to use for downstream analysis.",
+				dest="bam_filter_level")
+
 	return parser
 
 

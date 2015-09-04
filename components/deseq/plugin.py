@@ -54,17 +54,23 @@ def run(name, project):
 
 
 def create_diff_exp_summary(deseq_files, project, component_params):
+	"""
+	This method writes a simple tab-delimited output file summarizing the number of up/down regulated genes.
+	"""
+	target_suffix = project.parameters.get('bam_filter_level') + '.' + component_params.get('deseq_output_tag')
 	summary_filepath = os.path.join(component_params.get('deseq_output_dir'), component_params.get('summary_file'))
 	project.diff_exp_summary_filepath = summary_filepath
 	with open(summary_filepath, 'w') as outfile:
 		for f in deseq_files.values():
-			exp_condition, ctrl_condition = os.path.basename(f).split('.')[0].split(component_params.get('deseq_contrast_flag'))
+			if f.endswith(target_suffix):
+				project.parameters.get('bam_filter_level') + '.' + component_params.get('deseq_output_tag')
+				exp_condition, ctrl_condition = os.path.basename(f).split('.')[0].split(component_params.get('deseq_contrast_flag'))
 
-			# load the data and count
-			data = pd.read_table(f, sep=',')
-			downreg_count = np.sum((data['padj']<=0.05) & (data['log2FoldChange'] < 0))
-			upreg_count = np.sum((data['padj']<=0.05) & (data['log2FoldChange'] > 0))
-			outfile.write('\t'.join([ctrl_condition, exp_condition, str(upreg_count), str(downreg_count)]) + '\n')
+				# load the data and count
+				data = pd.read_table(f, sep=',')
+				downreg_count = np.sum((data['padj']<=0.05) & (data['log2FoldChange'] < 0))
+				upreg_count = np.sum((data['padj']<=0.05) & (data['log2FoldChange'] > 0))
+				outfile.write('\t'.join([ctrl_condition, exp_condition, str(upreg_count), str(downreg_count)]) + '\n')
 
 
 def call_deseq(project, component_params):
