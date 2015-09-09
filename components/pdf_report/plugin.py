@@ -70,9 +70,9 @@ def create_report(template, project, component_params, extra_params = {} ):
 
 	fill_template(template, project, component_params)
 
-	compile_report(project, component_params)
+	report_filepath = compile_report(project, component_params)
 
-	return {}
+	return {os.path.basename(report_filepath):report_filepath}
 
 
 def generate_figures(project, component_params, extra_params = {}):
@@ -188,6 +188,8 @@ def compile_report(project, component_params):
 	if p.returncode != 0:
 		logging.error('Error running the compile script for the latex report.')
 		raise Exception('Error running the compile script for the latex report.')
+	# the compiled report is simply the project name with the '.pdf' suffix
+	return os.path.join(component_params.get('report_output_dir'), project_id + '.pdf')
 
 
 def get_bam_counts(project, component_params):
