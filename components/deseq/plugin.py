@@ -41,7 +41,7 @@ def run(name, project):
 	deseq_output_files, heatmap_files = call_deseq(project, component_params)
 
 	# write a summary of the number of differentially expressed genes
-	create_diff_exp_summary(deseq_output_files)
+	create_diff_exp_summary(deseq_output_files, project, component_params)
 
 	# change permissions:
 	[os.chmod(f,0775) for f in deseq_output_files.values()]
