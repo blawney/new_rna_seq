@@ -7,6 +7,7 @@ import utils.cmd_line_parser as cl_parser
 import pickle
 import datetime
 import report_generator.create_report as report_writer
+from utils.component import Component
 
 from utils.pipeline_builder import PipelineBuilder
 from utils.pipeline import Pipeline # allows unpickling the pipeline object
@@ -54,6 +55,11 @@ if __name__ == "__main__":
 			configured_pipeline = builder.build()
 
 		configured_pipeline.run()
+
+		latex_report_component = Component('pdf_report', os.path.join(configured_pipeline.project.parameters.get('components_dir'), 'pdf_report'))
+		latex_report_component.add_project_data(configured_pipeline.project)
+		latex_report_component.run()
+		configured_pipeline.components.append(latex_report_component)
 
 		report_writer.write_report(configured_pipeline)
 

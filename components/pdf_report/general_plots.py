@@ -1,3 +1,7 @@
+import logging
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import rcParams
@@ -5,6 +9,9 @@ import numpy as np
 import matplotlib.patches as mpatches
 import glob
 import os
+
+class CoverageFileNotFoundException(Exception):
+	pass
 
 # some reasonable colors for this plot
 colors = ["#24476B", "#90BA6E", "#9F5845"]
@@ -59,19 +66,20 @@ def plot_coverage(project, component_params):
 	num_rows = n/num_cols+1
 
 	for sample in project.samples:
+		logging.info('globbing path: %s' % os.path.join( component_params.get('report_output_dir'), sample.sample_name + '*' + component_params.get('coverage_file_suffix')))
 		cvg_glob = glob.glob(os.path.join( component_params.get('report_output_dir'), sample.sample_name + '*' + component_params.get('coverage_file_suffix')))
 		if len(cvg_glob) == 1:
 			cvg_filepath = cvg_glob[0]
-			data = pd.read_table(cvg_filepath, names=['chrom', 'start', 'end', 'counts'])
+			logging.info('For sample %s, found cvg file: %s' % (sample.sample_name, cvg_filepath))
+			data = pd.read_table(cvg_filepath, names=['chrom', 'start', 'end', 'counts'], dtype={'chrom':str, 'start':np.int32, 'end':np.int32, 'counts':np.int32}, low_memory=False)
 
 			fig = plt.figure(figsize=(22,22))
 
 			for i,c in enumerate(all_regions):
 				chr_data = data[data.chrom == c]
 				L = chr_data.shape[0]
-
+				
 				ax = fig.add_subplot(num_rows, num_cols, i+1)
-
 				xvals = np.zeros(2*L)
 				xvals[0] = chr_data.start.iloc[0]
 				xvals[-1] = chr_data.end.iloc[-1]
@@ -84,11 +92,12 @@ def plot_coverage(project, component_params):
 					ax.set_ylabel('Depth')
 				ax.set_title(c)
 				ax.set_xticks([])
-
 			plt.tight_layout()
 			output_plot = cvg_filepath[:-len(component_params.get('coverage_file_suffix'))] + component_params.get('coverage_plot_suffix')
+			logging.info('Write coverage pdf to %s' % output_plot)
 			plt.savefig(output_plot)
-
+		else:
+			raise CoverageFileNotFoundException('Coverage file could not be found for sample %s' % sample.sample_name)
 
 
 

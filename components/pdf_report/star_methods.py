@@ -1,3 +1,7 @@
+import logging
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import numpy as np
@@ -53,7 +57,7 @@ def plot_read_composition(log_data, targets, filename, colors):
 	Receives a dict of dicts (sample names each mapping to a dictionary of log data about that sample), 
 	the 'targets' (which is a list of strings to select data from the dictionary), and the output filepath (full path!)
 	"""
-
+	logging.info('Start plot_read_composition(...)')
 	samples = log_data.keys()
 	N = len(samples)
 	width = 10.0
@@ -72,7 +76,7 @@ def plot_read_composition(log_data, targets, filename, colors):
 		bar_groups.append(ax.barh(y_pos, vals, align='center', alpha=0.6, left=prior, color=colors[i]))
 		prior += vals
     
-	ax.legend(bar_groups, targets, loc=9,  bbox_to_anchor=(0.5, -0.10))
+	ax.legend(bar_groups, targets, loc=9,  bbox_to_anchor=(0.5, -0.15))
 	ax.yaxis.set_ticks(y_pos)
 	ax.yaxis.set_ticklabels(samples)
 	ax.yaxis.set_tick_params(pad=10)
@@ -83,6 +87,7 @@ def plot_read_composition(log_data, targets, filename, colors):
 	plt.rc("font", **font)
 	ax.set_title("Read Composition")
 	fig.savefig(filename, bbox_inches='tight')
+	logging.info('Saved read composition plot to %s' % filename)
 
 
 

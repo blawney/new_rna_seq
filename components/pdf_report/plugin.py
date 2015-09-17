@@ -58,8 +58,12 @@ def run(name, project):
 	# change permissions:
 	os.chmod(output_file, 0775)
 
+	# have to give the constructor of ComponentOutput a dictionary
+	output_file_map = {os.path.basename(output_file):output_file}
+
 	# create the ComponentOutput object and return it
-	c1 = component_utils.ComponentOutput(output_file, component_params.get('report_tab_title'), component_params.get('report_header_msg'), component_params.get('report_display_format'))
+	logging.info('Preparing ComponentOutput for latex report module')
+	c1 = component_utils.ComponentOutput(output_file_map, component_params.get('report_tab_title'), component_params.get('report_header_msg'), component_params.get('report_display_format'))
 	return [ c1 ]
 
 
@@ -72,22 +76,27 @@ def create_report(template, project, component_params, extra_params = {} ):
 
 	report_filepath = compile_report(project, component_params)
 
-	return {os.path.basename(report_filepath):report_filepath}
+	return report_filepath
 
 
 def generate_figures(project, component_params, extra_params = {}):
 
 	if project.parameters.get('aligner') == 'star' and not project.parameters.get('skip_align'):
+		logging.info('Calling star specific methods for figure generation')
 
 		# a dict of dicts (sample maps to a dictionary with sample-specific key:value pairs)
 		log_data = star_methods.process_star_logs(project, extra_params)
+		logging.info(log_data)
 		plot_path = os.path.join(component_params.get('report_output_dir'), extra_params.get('mapping_composition_fig'))
 		component_params['mapping_composition_fig'] = plot_path
 		star_methods.plot_read_composition(log_data, extra_params.get('log_targets'), plot_path, extra_params.get('mapping_composition_colors'))
 
+		logging.info('Completed plotting read composition.')
+
 		plot_path = os.path.join(component_params.get('report_output_dir'), component_params.get('total_reads_fig'))
 		component_params['total_reads_fig'] = plot_path
 		star_methods.plot_total_read_count(log_data, plot_path)
+		logging.info('Completed plotting total read counts.')
 
 	# other plots that do not require aligner-specific methods:
 
@@ -164,6 +173,8 @@ def fill_template(template, project, component_params):
 	with open(output_tex, 'w') as outfile:
 		outfile.write(template.render(context))
 	shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)),component_params.get('bibtex_file')), component_params.get('report_output_dir'))
+	shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)),component_params.get('igv_screenshot_1')), component_params.get('report_output_dir'))
+	shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)),component_params.get('igv_screenshot_2')), component_params.get('report_output_dir'))
 
 
 def get_diff_exp_gene_summary(project):
@@ -189,7 +200,9 @@ def compile_report(project, component_params):
 		logging.error('Error running the compile script for the latex report.')
 		raise Exception('Error running the compile script for the latex report.')
 	# the compiled report is simply the project name with the '.pdf' suffix
-	return os.path.join(component_params.get('report_output_dir'), project_id + '.pdf')
+	pdf_report_path = os.path.join(component_params.get('report_output_dir'), project_id + '.pdf')
+	logging.info('PDF report is located at %s' % pdf_report_path)
+	return pdf_report_path
 
 
 def get_bam_counts(project, component_params):
