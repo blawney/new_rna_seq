@@ -153,10 +153,11 @@ def fill_template(template, project, component_params):
 	stripped_suffix = full_suffix[:-len(full_suffix.split('.')[-1])-1]
 	cvg_figures_dictionary = {escape(sample.sample_name):sample.sample_name + '.' + stripped_suffix for sample in project.samples}
 
-	diff_exp_genes = get_diff_exp_gene_summary(project)
-	for item in diff_exp_genes:
-		item[0] = escape(item[0])
-		item[1] = escape(item[1])	
+	if not project.parameters.get('skip_analysis'):
+		diff_exp_genes = get_diff_exp_gene_summary(project)
+		for item in diff_exp_genes:
+			item[0] = escape(item[0])
+			item[1] = escape(item[1])	
 
 	context = {
 		'sample_and_group_pairs':sample_and_group_pairs,
