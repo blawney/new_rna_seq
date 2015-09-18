@@ -95,8 +95,9 @@ def add_fastQC_reports(project, transformer):
 
 
 def add_to_context(context, tab, section):
-	context['section_list'].append(tab)
-	context['sections'].append(section)
+	if tab and section:
+		context['section_list'].append(tab)
+		context['sections'].append(section)
 
 
 def write_report(pipeline):
