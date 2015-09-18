@@ -4,15 +4,16 @@ import os
 import glob
 import imp
 import subprocess
-import general_plots
 import numpy as np
 import StringIO 
 import jinja2
-import star_methods
 import shutil
 
+sys.path.append(os.path.dirname( os.path.abspath(__file__) ) )
 sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
 
+import general_plots
+import star_methods
 import component_utils
 
 class PdfReportNotConfiguredForAlignerException(Exception):
