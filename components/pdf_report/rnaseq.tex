@@ -42,6 +42,9 @@ The following samples and their corresponding annotations were used in this anal
     \end{tabular}
 \end{center}
 
+
+{% if analysis_performed %}
+
 The following pairwise group comparisons were performed:
 
 \begin{center}
@@ -55,6 +58,7 @@ The following pairwise group comparisons were performed:
 
 If the contrast appears reversed in the table above, it does not affect the differential expression testing performed.  If this is the case the directions of differential expression become reversed but the significance of differential expression remains the same.
 
+{% endif %}
 
 \section{Reference genome}
 Your data was aligned against the {{ref_genome_name}} genome, available at \url {{'{'}} {{ ref_genome_url }} {{'}'}}

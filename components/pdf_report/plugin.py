@@ -147,17 +147,20 @@ def fill_template(template, project, component_params):
 	# construct the context:
 
 	sample_and_group_pairs = [ (escape(sample.sample_name), escape(sample.condition)) for sample in project.samples ]
-	contrast_pairs = [ (escape(cp[0]), escape(cp[1])) for cp in project.contrasts ]
 
 	full_suffix = project.parameters.get('bam_filter_level') + '.' + component_params.get('coverage_plot_suffix')
 	stripped_suffix = full_suffix[:-len(full_suffix.split('.')[-1])-1]
 	cvg_figures_dictionary = {escape(sample.sample_name):sample.sample_name + '.' + stripped_suffix for sample in project.samples}
 
 	if not project.parameters.get('skip_analysis'):
+		contrast_pairs = [ (escape(cp[0]), escape(cp[1])) for cp in project.contrasts ]
 		diff_exp_genes = get_diff_exp_gene_summary(project)
 		for item in diff_exp_genes:
 			item[0] = escape(item[0])
-			item[1] = escape(item[1])	
+			item[1] = escape(item[1])
+	else:
+		diff_exp_genes = None
+		contrast_pairs = None
 
 	context = {
 		'sample_and_group_pairs':sample_and_group_pairs,
