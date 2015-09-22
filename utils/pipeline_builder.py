@@ -92,12 +92,10 @@ class PipelineBuilder(object):
 			logging.info('Creating component: %s' % name)
 			self.all_components.append(Component(name, components_dict[name]))
 
-		if not self.builder_params.get('skip_analysis'):
-			for name in self.analysis_components:
-				logging.info('Creating component: %s' % name)
-				self.all_components.append(Component(name, components_dict[name]))
-		else:
-			logging.info('Skipping analysis per the input args')
+		# add the analysis components, marking as appropriate
+		for name in self.analysis_components:
+			logging.info('Creating component: %s' % name)
+			self.all_components.append(Component(name, components_dict[name], 'ANALYSIS'))
 
 
 

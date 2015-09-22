@@ -17,6 +17,7 @@ def setup_args():
 	subparsers = parser.add_subparsers(title='Subcommands to the pipeline')
 	run_subparser = subparsers.add_parser('run')
 	restart_subparser = subparsers.add_parser('restart')
+	continue_subparser = subparsers.add_parser('continue')
 
 	restart_subparser.add_argument("-pickle",
 				required=True,
@@ -24,6 +25,14 @@ def setup_args():
 				help="Path to a restart file (a pickled python object).",
 				action=MakeAbsolutePathAction,
 				dest="restart")
+
+	continue_subparser.add_argument("-pickle",
+				required=True,
+				default=None,
+				help="Path to a restart file (a pickled python object).",
+				action=MakeAbsolutePathAction,
+				dest="continue_pickle")
+
 
 	run_subparser.add_argument("-d", "--dir", 
 				required=True, 

@@ -2,13 +2,25 @@ import os
 import imp
 import logging
 
+class UnknownComponentTypeException(Exception):
+	pass
+
 class Component(object):
-	def __init__(self, name, directory):
+
+	COMPONENT_TYPES = ['STANDARD', 'ANALYSIS']
+
+	def __init__(self, name, directory, component_type = 'STANDARD'):
 		self.name = name
 		self.location = directory
 		self.project = None
 		self.completed = False # keeps track of whether the component has been executed successfully.
 		self.outputs = [] 
+
+		if component_type in COMPONENT_TYPES:
+			self.component_type = component_type
+		else:
+			raise UnknownComponentTypeException('Exception when setting the type of Component object.  The value %s was passed, and the acceptable values are %s.' % (t, COMPONENT_TYPES))
+
 
 	def __str__(self):
 		s = 'Component name: ' + str(self.name) + '\n'

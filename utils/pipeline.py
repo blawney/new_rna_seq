@@ -29,18 +29,28 @@ class Pipeline(object):
 			logging.info('No contrasts since skipping downstream analysis.')
 
 
+	def component_should_be_run(self, component):
+		if self.project.parameters.get('skip_analysis'):
+			if component.component_type == 'ANALYSIS':
+				return False
+		return True
+
+
 	def run(self):
 		"""
 		Sequentially runs the Component objects that have been added to this Pipeline object
 		"""
 		if self.project and len(self.project.samples) > 0:
 			for component in self.components:
-				if not component.completed:
-					component.add_project_data(self.project)
-					component.run()
-					component.completed = True
+				if component_should_be_run(component)
+					if not component.completed:
+						component.add_project_data(self.project)
+						component.run()
+						component.completed = True
+					else:
+						logging.info('Component %s has been already completed successfully.  Moving onto next one...' % component.name)
 				else:
-					logging.info('Component %s has been already completed successfully.  Moving onto next one...' % component.name)
+					logging.info('Component %s has been skipped because of the commandline flag' % component.name)
 		else:
 			logging.error('Could not run the pipeline since no project was added, or there were zero samples detected.')
 			raise Exception('There was nothing to run.  Check the Samples were properly added to the project.')

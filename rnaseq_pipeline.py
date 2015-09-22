@@ -41,11 +41,20 @@ if __name__ == "__main__":
 		# without involving any pickling.  
 		configured_pipeline = None
 
-		# if restarting from a pickle object
+		# if restarting from a pickle object after error
 		if cmd_line_params.get('restart', None):
 			append_to_syspath(pipeline_home)
 			configured_pipeline = pickle.load(open( cmd_line_params.get('restart'), 'rb'))
 			create_logger(configured_pipeline.project.parameters.get('output_location'))
+		# if restarting to continue the DGE analysis
+		elif cmd_line_params.get('continue_pickle', None):
+			append_to_syspath(pipeline_home)
+			configured_pipeline = pickle.load(open( cmd_line_params.get('continue_pickle'), 'rb'))
+			create_logger(configured_pipeline.project.parameters.get('output_location'))
+
+			# !! Change the skip_analysis flag to False so the DGE components are run !!
+			configured_pipeline.project.parameters.reset_param('skip_analysis', False)
+
 		else:
 			# build the pipeline:
 			builder = PipelineBuilder(pipeline_home)
@@ -63,10 +72,19 @@ if __name__ == "__main__":
 
 		report_writer.write_report(configured_pipeline)
 
+		# if we reach this far, everything was good- if it was a full analysis run, then simply finish.  Otherwise, save the current state for a potential restart
+		# to complete the DGE analysis
+		if configured_pipeline.project.parameters.get('skip_analysis'):
+			logging.info('Analysis was skipped- create a pickle for case where further analysis may be desired.')
+			output_pickle_path = os.path.join(configured_pipeline.project.parameters.get('output_location'), 'restart.pickle')
+			pickle.dump(configured_pipeline, open(output_pickle_path,'wb'))
+			logging.info("Created a restart pickle at %s " % output_pickle_path)
+			
+
 	except Exception as ex:
 		logging.error("Exception thrown.  Message: %s", ex.message)
 		if configured_pipeline:
-			output_pickle_path = os.path.join(configured_pipeline.project.parameters.get('output_location'), 'restart.pickle')
+			output_pickle_path = os.path.join(configured_pipeline.project.parameters.get('output_location'), 'restart.error.pickle')
 			pickle.dump(configured_pipeline, open(output_pickle_path,'wb'))
 			logging.info("Created a restart pickle at %s " % output_pickle_path)
 		sys.exit(1)
