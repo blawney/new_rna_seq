@@ -122,7 +122,7 @@ def write_report(pipeline):
 
 		# create the report directory:
 		report_directory = os.path.join(parameters.get('output_location'), report_parameters.get('report_directory'))
-		util_methods.create_directory(report_directory)
+		util_methods.create_directory(report_directory, overwrite = True)
 
 		# load the template
 		env = jinja2.Environment(loader=jinja2.FileSystemLoader(this_directory))
@@ -168,6 +168,10 @@ def write_report(pipeline):
 		# move the lib files (javascript, css, etc)
 		destination = os.path.join(report_directory, report_parameters.get('libraries_directory'))
 		src = os.path.join(this_directory, report_parameters.get('libraries_directory'))
+
+		# cannot force shutil.copytree to overwrite, so just remove the libraries, and then copy over
+		if os.path.isdir(destination):
+			shutil.rmtree(destination)
 		shutil.copytree(src, destination)
 
 	except Exception as ex:
