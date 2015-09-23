@@ -33,6 +33,18 @@ def setup_args():
 				action=MakeAbsolutePathAction,
 				dest="continue_pickle")
 
+	continue_subparser.add_argument("-c", "--contrasts",
+				required=False,
+				help="The path to a contrast annotation file (for formatting, see documentation).",
+				action=MakeAbsolutePathAction,
+				dest="contrast_file")
+
+	continue_subparser.add_argument("-s", "--samples",
+				required=False,
+				help="The path to a sample annotation file (for formatting, see documentation).",
+				action=MakeAbsolutePathAction,
+				dest="annotation_file")
+
 
 	run_subparser.add_argument("-d", "--dir", 
 				required=True, 

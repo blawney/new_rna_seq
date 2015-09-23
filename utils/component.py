@@ -16,7 +16,7 @@ class Component(object):
 		self.completed = False # keeps track of whether the component has been executed successfully.
 		self.outputs = [] 
 
-		if component_type in COMPONENT_TYPES:
+		if component_type in Component.COMPONENT_TYPES:
 			self.component_type = component_type
 		else:
 			raise UnknownComponentTypeException('Exception when setting the type of Component object.  The value %s was passed, and the acceptable values are %s.' % (t, COMPONENT_TYPES))
@@ -36,6 +36,10 @@ class Component(object):
 
 
 	def run(self):
+
+		# in the case of components that can be re-run (e.g. report generation components which can be produced at various points in the pipeline)
+		# we need to reset this, so it doesn't save the older result
+		self.outputs = []
 
 		# the name of the script (minus the .py) that is used to run this component
 		module_name = self.project.parameters.get('entry_module')

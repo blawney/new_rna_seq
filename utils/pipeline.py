@@ -42,7 +42,7 @@ class Pipeline(object):
 		"""
 		if self.project and len(self.project.samples) > 0:
 			for component in self.components:
-				if component_should_be_run(component)
+				if self.component_should_be_run(component):
 					if not component.completed:
 						component.add_project_data(self.project)
 						component.run()

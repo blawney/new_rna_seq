@@ -8,7 +8,7 @@ import pickle
 import datetime
 import report_generator.create_report as report_writer
 from utils.component import Component
-
+import utils.continue_analysis
 from utils.pipeline_builder import PipelineBuilder
 from utils.pipeline import Pipeline # allows unpickling the pipeline object
 
@@ -52,9 +52,8 @@ if __name__ == "__main__":
 			configured_pipeline = pickle.load(open( cmd_line_params.get('continue_pickle'), 'rb'))
 			create_logger(configured_pipeline.project.parameters.get('output_location'))
 
-			# !! Change the skip_analysis flag to False so the DGE components are run !!
-			configured_pipeline.project.parameters.reset_param('skip_analysis', False)
-
+			# alter the pipeline for the pending analysis:
+			utils.continue_analysis.configure_for_restart(configured_pipeline, cmd_line_params.get('annotation_file', None), cmd_line_params.get('contrast_file', None))
 		else:
 			# build the pipeline:
 			builder = PipelineBuilder(pipeline_home)
@@ -65,10 +64,12 @@ if __name__ == "__main__":
 
 		configured_pipeline.run()
 
-		latex_report_component = Component('pdf_report', os.path.join(configured_pipeline.project.parameters.get('components_dir'), 'pdf_report'))
-		latex_report_component.add_project_data(configured_pipeline.project)
-		latex_report_component.run()
-		configured_pipeline.components.append(latex_report_component)
+		# if we are restarting, then it's possible that this component was already previously added.  If that is the case, then it was already executed when we called the run() method above.
+		if not any(['pdf_report' == c.name for c in configured_pipeline.components]):
+			latex_report_component = Component('pdf_report', os.path.join(configured_pipeline.project.parameters.get('components_dir'), 'pdf_report'))
+			latex_report_component.add_project_data(configured_pipeline.project)
+			latex_report_component.run()
+			configured_pipeline.components.append(latex_report_component) # have to add to configured pipeline so that the report writer finds it.
 
 		report_writer.write_report(configured_pipeline)
 
