@@ -29,7 +29,7 @@ def find_files(root_dir, pattern):
 	This method walks the directory tree underneath the root_dir to find files matching the regex pattern
 	"""
 	matching_files = []
-	for root, dirs, files in os.walk(root_dir):
+	for root, dirs, files in os.walk(root_dir, followlinks=True):
 		for directory in dirs:
 			glob_path = os.path.join(root, directory, pattern)
 			matching_files += case_insensitive_glob(glob_path)
