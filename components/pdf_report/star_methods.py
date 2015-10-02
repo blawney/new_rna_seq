@@ -33,6 +33,8 @@ def process_star_logs(project, extra_params):
 
 	wildcard_path = os.path.join( project.parameters.get('project_directory') , project.parameters.get('sample_dir_prefix') + '*', project.parameters.get('alignment_dir'), '*' + extra_params.get('star_log_suffix'))
 	logfiles = glob.glob(wildcard_path)
+	sn = [s.sample_name for s in project.samples]
+	logfiles = [log for log in logfiles if os.path.basename(log)[:-len(extra_params.get('star_log_suffix'))] in sn]
 	d = {}
 	for log in logfiles:
 		sample = os.path.basename(log)[:-len(extra_params.get('star_log_suffix'))]
