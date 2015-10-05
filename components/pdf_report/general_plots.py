@@ -73,7 +73,7 @@ def plot_coverage(project, component_params):
 			logging.info('For sample %s, found cvg file: %s' % (sample.sample_name, cvg_filepath))
 			data = pd.read_table(cvg_filepath, names=['chrom', 'start', 'end', 'counts'], dtype={'chrom':str, 'start':np.int32, 'end':np.int32, 'counts':np.int32}, low_memory=False)
 
-			fig = plt.figure(figsize=(22,22))
+			fig = plt.figure(figsize=(11,11))
 
 			for i,c in enumerate(all_regions):
 				chr_data = data[data.chrom == c]
