@@ -66,8 +66,8 @@ def plot_coverage(project, component_params):
 	num_rows = n/num_cols+1
 
 	for sample in project.samples:
-		logging.info('globbing path: %s' % os.path.join( component_params.get('report_output_dir'), sample.sample_name + '.' + component_params.get('bam_filter_level') + '.'  + component_params.get('coverage_file_suffix')))
-		cvg_glob = glob.glob(os.path.join( component_params.get('report_output_dir'), sample.sample_name + '.' + component_params.get('bam_filter_level') + '.' + component_params.get('coverage_file_suffix')))
+		logging.info('globbing path: %s' % os.path.join( component_params.get('report_output_dir'), sample.sample_name + '.' + project.parameters.get('bam_filter_level') + '.'  + component_params.get('coverage_file_suffix')))
+		cvg_glob = glob.glob(os.path.join( component_params.get('report_output_dir'), sample.sample_name + '.' + project.parameters.get('bam_filter_level') + '.' + component_params.get('coverage_file_suffix')))
 		if len(cvg_glob) == 1:
 			cvg_filepath = cvg_glob[0]
 			logging.info('For sample %s, found cvg file: %s' % (sample.sample_name, cvg_filepath))
