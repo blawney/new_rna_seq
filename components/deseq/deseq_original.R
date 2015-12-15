@@ -29,7 +29,7 @@ current_samples<-annotations[annotations[,2] %in% selected_groups,]
 current_groups<-current_samples[[2]]
 
 # subset to only keep samples corresponding to the current groups in the count_data dataframe
-count_data <- count_data[,as.vector(current_samples[[1]])]
+count_data <- count_data[,as.vector(make.names(current_samples[[1]]))]
 
 # the number of samples in each contrast group
 num_A = sum(groups == CONDITION_A)
