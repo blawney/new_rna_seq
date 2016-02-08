@@ -80,16 +80,19 @@ def plot_coverage(project, component_params):
 				L = chr_data.shape[0]
 				
 				ax = fig.add_subplot(num_rows, num_cols, i+1)
-				xvals = np.zeros(2*L)
-				xvals[0] = chr_data.start.iloc[0]
-				xvals[-1] = chr_data.end.iloc[-1]
-				xvals[1:-1] = np.repeat(chr_data.end.iloc[:-1].values,2)
+				if L > 0:
+					xvals = np.zeros(2*L)
+					xvals[0] = chr_data.start.iloc[0]
+					xvals[-1] = chr_data.end.iloc[-1]
+					xvals[1:-1] = np.repeat(chr_data.end.iloc[:-1].values,2)
 
-				yvals = np.repeat(chr_data.counts.values,2)
-				ax.plot(xvals,yvals)
-				ax.set_ylim((0, 1.05 * np.max(yvals)))
-				if i==0:
-					ax.set_ylabel('Depth')
+					yvals = np.repeat(chr_data.counts.values,2)
+					ax.plot(xvals,yvals)
+					ax.set_ylim((0, 1.05 * np.max(yvals)))
+					if i==0:
+						ax.set_ylabel('Depth')
+				else:
+					ax.text(0.5,0.5,'No coverage data', horizontalalignment='center')
 				ax.set_title(c)
 				ax.set_xticks([])
 			plt.tight_layout()
