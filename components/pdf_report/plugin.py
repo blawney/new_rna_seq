@@ -165,14 +165,14 @@ def fill_template(template, project, component_params):
 	context = {
 		'sample_and_group_pairs':sample_and_group_pairs,
 		'contrast_pairs':contrast_pairs,
-		'ref_genome_name': project.parameters.get('genome'),
+		'ref_genome_name': escape(project.parameters.get('genome')),
 		'ref_genome_url': project.parameters.get('genome_source_link'),
 		'cvg_plot_mappings': cvg_figures_dictionary,
 		'alignment_performed' : not project.parameters.get('skip_align'),
 		'analysis_performed' : not project.parameters.get('skip_analysis'),
 		'diff_exp_genes' : diff_exp_genes,
 		'project_id': escape(project_id),
-		'bam_filter_level': project.parameters.get('bam_filter_level')
+		'bam_filter_level': escape(project.parameters.get('bam_filter_level'))
 	}
 
 	with open(output_tex, 'w') as outfile:
