@@ -4,6 +4,7 @@
 \usepackage{natbib} % Required to change bibliography style to APA
 \usepackage{amsmath} % Required for some math elements 
 \usepackage{url}
+\usepackage{longtable}
 \usepackage{hyperref}
 \usepackage{listings}
 \usepackage{textcomp}
@@ -34,12 +35,12 @@ This report summarizes the analyses used in analyzing your data. For further que
 The following samples and their corresponding annotations were used in this analysis:
 
 \begin{center}
-    \begin{tabular}{c|c}
+    \begin{longtable}{c|c}
      Sample ID & Group \\ \hline
      {% for id, group in sample_and_group_pairs %}
 	{{id}} & {{group}}{% if not loop.last %}{{ "\\\\" }}{% endif %}
      {% endfor %}
-    \end{tabular}
+    \end{longtable}
 \end{center}
 
 
@@ -48,12 +49,12 @@ The following samples and their corresponding annotations were used in this anal
 The following pairwise group comparisons were performed:
 
 \begin{center}
-    \begin{tabular}{c|c}
+    \begin{longtable}{c|c}
      Base/Control & Experimental \\ \hline
      {% for control_group, exp_group in contrast_pairs %}
 	{{control_group}} & {{exp_group}}{% if not loop.last %}{{ "\\\\" }}{% endif %}
      {% endfor %}
-    \end{tabular}
+    \end{longtable}
 \end{center}
 
 If the contrast appears reversed in the table above, it does not affect the differential expression testing performed.  If this is the case the directions of differential expression become reversed but the significance of differential expression remains the same.
@@ -172,7 +173,7 @@ In general, you will note that genes with low abundance but high fold-change (e.
 For this experiment, we have the following number of genes (at the {{bam_filter_level}} level) marked as differentially expressed at the $\textrm{FDR} < 0.05$ threshold.:
 
 \begin{center}
-    \begin{tabular}{|c|c|c|c|}
+    \begin{longtable}{|c|c|c|c|}
     \hline
     \multicolumn{2}{|c|}{Contrast} &
     \multicolumn{2}{c|}{Number of Genes}\\ \hline
@@ -181,7 +182,7 @@ For this experiment, we have the following number of genes (at the {{bam_filter_
 	{{control_group}} & {{exp_group}} & {{upregulated_count}} & {{downregulated_count}}{{ '\\\\' }}
      {% endfor %}
      \hline
-    \end{tabular}
+    \end{longtable}
 \end{center}
 
 {% endif %}

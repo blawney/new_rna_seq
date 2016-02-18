@@ -54,6 +54,7 @@ def plot_bam_counts(plot_data, filename):
 	ax.legend(handles=legend_handles, loc=9,  bbox_to_anchor=(0.5, -0.05))
 
 	fig.savefig( filename, bbox_inches='tight')
+	plt.close()
 
 
 def plot_coverage(project, component_params):
@@ -99,6 +100,7 @@ def plot_coverage(project, component_params):
 			output_plot = cvg_filepath[:-len(component_params.get('coverage_file_suffix'))] + component_params.get('coverage_plot_suffix')
 			logging.info('Write coverage pdf to %s' % output_plot)
 			plt.savefig(output_plot)
+			plt.close()
 		else:
 			raise CoverageFileNotFoundException('Coverage file could not be found for sample %s' % sample.sample_name)
 
