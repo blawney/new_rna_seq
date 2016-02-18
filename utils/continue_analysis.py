@@ -45,6 +45,8 @@ def configure_for_restart(configured_pipeline, annotation_filepath = None, contr
 				else:
 					contrast_pairings = set(itertools.combinations(conditions, 2))
 				configured_pipeline.project.contrasts = contrast_pairings
+				configured_pipeline.project.parameters.reset_param('sample_annotation_file', annotation_filepath)
+				configured_pipeline.project.parameters.reset_param('contrast_file', contrast_filepath)
 
 			else:
 				logging.error('Not all of the samples were found in the annotation file.  All samples: %s' % configured_pipeline.project.samples)
