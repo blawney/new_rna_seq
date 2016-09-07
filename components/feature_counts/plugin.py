@@ -142,7 +142,7 @@ def execute_counting(project, component_params, util_methods):
 	logging.info('Begin counting reads in the BAM files.')
 	
 	# default options, as a list of tuples:
-	default_options = [('-a', project.parameters.get('gtf')),('-t', 'exon'),('-g', 'gene_name')]
+	default_options = [('-a', project.parameters.get('gtf')),('-t', 'CDS'),('-g', 'gene_name')]
 	base_command = component_params.get('feature_counts') + ' ' + ' '.join(map(lambda x: ' '.join(x), default_options))
 
 	# if a paired experiment, count the fragments, not the single reads
