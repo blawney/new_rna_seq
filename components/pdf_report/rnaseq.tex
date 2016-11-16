@@ -213,24 +213,5 @@ In Figure \ref{fig:igv_dups}, we have focused on a $~1800$bp region in an exon o
 
 
 \newpage
-\appendix
-
-\begin{appendices}
-
-
-
-\section{Read coverage}
-
-Depending on the desired outcomes of the sequencing experiment, different levels of sequencing coverage may be necessary to adequately answer the question.  Additionally, extremely variable coverage may indicate problems such as low RNA quantities and overamplification.  For example sample, we plot the coverage of each chromosome below.  Large spikes in the coverage profile could indicate high levels of duplicate reads and a problem with the experiment.
-
-{% for sample_id, cvg_plot in cvg_plot_mappings.iteritems() %}
-	\begin{figure}[ht!]
-	  \centering
-	    \includegraphics[width=0.85\textwidth]{{'{{{'}}{{cvg_plot}}{{'}}}'}}
-	    \caption{Read coverage for sample {{sample_id}}}
-	\end{figure}
-{% endfor %}
-
-\end{appendices}
 
 \end{document}

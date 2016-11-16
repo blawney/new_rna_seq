@@ -107,8 +107,8 @@ def generate_figures(project, component_params, extra_params = {}):
 	general_plots.plot_bam_counts(bam_count_data, bam_count_plot_path)
 
 	# the coverage plots for the 'usual' chromosomes
-	calculate_coverage_data(project, component_params)
-	general_plots.plot_coverage(project, component_params)
+	#calculate_coverage_data(project, component_params)
+	#general_plots.plot_coverage(project, component_params)
 
 
 
@@ -151,6 +151,7 @@ def fill_template(template, project, component_params):
 	full_suffix = project.parameters.get('bam_filter_level') + '.' + component_params.get('coverage_plot_suffix')
 	stripped_suffix = full_suffix[:-len(full_suffix.split('.')[-1])-1]
 	cvg_figures_dictionary = {escape(sample.sample_name):sample.sample_name + '.' + stripped_suffix for sample in project.samples}
+	cvg_figures_dictionary = {}
 
 	if not project.parameters.get('skip_analysis'):
 		contrast_pairs = [ (escape(cp[0]), escape(cp[1])) for cp in project.contrasts ]
