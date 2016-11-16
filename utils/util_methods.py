@@ -32,6 +32,8 @@ def find_files(root_dir, pattern):
 	for root, dirs, files in os.walk(root_dir, followlinks=True):
 		for directory in dirs:
 			glob_path = os.path.join(root, directory, pattern)
+			logging.info('Check %s' % directory)
+			logging.info('globbing: %s' % glob_path)
 			matching_files += case_insensitive_glob(glob_path)
 	if len(matching_files) > 0:
 		return matching_files
