@@ -1,4 +1,4 @@
-#!/cccbstore-rc/projects/cccb/pipelines/new_rna_seq/venv/bin/python
+#!/cccbstore-rc/projects/cccb/pipelines/new_rna_seq/rnaseq_venv/bin/python
 
 import logging
 import os
